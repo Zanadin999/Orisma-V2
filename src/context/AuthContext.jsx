@@ -21,11 +21,15 @@ function loadSession(accounts) {
     const raw = localStorage.getItem(SESSION_KEY);
     if (raw) {
       const s = JSON.parse(raw);
-      const found = accounts.find(a => a.id === s.id);
-      if (found) return found;
+      if (s && s.id) {
+        const found = accounts.find(a => String(a.id) === String(s.id));
+        if (found) return found;
+      }
+      // if session explicitly null, stay logged out
+      if (raw === "null" || raw === "\"null\"") return null;
     }
   } catch {}
-  return accounts[0];
+  return null;
 }
 
 const AuthContext = createContext(null);
@@ -35,7 +39,12 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(() => loadSession(loadAccounts()));
 
   useEffect(() => { try { localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts)); } catch {} }, [accounts]);
-  useEffect(() => { try { localStorage.setItem(SESSION_KEY, JSON.stringify({ id: currentUser.id })); } catch {} }, [currentUser]);
+  useEffect(() => {
+    try {
+      if (currentUser) localStorage.setItem(SESSION_KEY, JSON.stringify({ id: currentUser.id }));
+      else localStorage.removeItem(SESSION_KEY);
+    } catch {}
+  }, [currentUser]);
 
   const addAccount = ({ name, email, role, password }) => {
     const acc = { id: Date.now(), name: name.trim(), email: email.trim().toLowerCase(), role, password, createdAt: new Date().toISOString().slice(0,10) };
@@ -43,15 +52,15 @@ export function AuthProvider({ children }) {
     return acc;
   };
   const updateAccount = (id, patch) => {
-    setAccounts(prev => prev.map(a => a.id === id ? { ...a, ...patch } : a));
-    if (currentUser.id === id) setCurrentUser(c => ({ ...c, ...patch }));
+    setAccounts(prev => prev.map(a => String(a.id) === String(id) ? { ...a, ...patch } : a));
+    if (currentUser && String(currentUser.id) === String(id)) setCurrentUser(c => ({ ...c, ...patch }));
   };
   const deleteAccount = (id) => {
     if (accounts.length <= 1) return { error: "Keep at least one account." };
-    setAccounts(prev => prev.filter(a => a.id !== id));
-    if (currentUser.id === id) {
-      const remaining = accounts.filter(a => a.id !== id);
-      setCurrentUser(remaining[0]);
+    setAccounts(prev => prev.filter(a => String(a.id) !== String(id)));
+    if (currentUser && String(currentUser.id) === String(id)) {
+      const remaining = accounts.filter(a => String(a.id) !== String(id));
+      setCurrentUser(remaining[0] || null);
     }
     return { ok: true };
   };
@@ -70,14 +79,14 @@ export function AuthProvider({ children }) {
     if (found) { setCurrentUser(found); return { ok: true }; }
     return { error: "Email atau password salah." };
   };
-  const logout = () => {};
+  const logout = () => { setToken(null); setCurrentUser(null); };
   const switchUser = (id) => {
-    const found = accounts.find(a => a.id === id);
+    const found = accounts.find(a => String(a.id) === String(id));
     if (found) setCurrentUser(found);
   };
 
   return (
-    <AuthContext.Provider value={{ accounts, currentUser, addAccount, updateAccount, deleteAccount, login, switchUser }}>
+    <AuthContext.Provider value={{ accounts, currentUser, addAccount, updateAccount, deleteAccount, login, logout, switchUser }}>
       {children}
     </AuthContext.Provider>
   );

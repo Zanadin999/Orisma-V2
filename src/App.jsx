@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { CategoriesProvider } from "./context/CategoriesContext";
 import { SettingsProvider } from "./context/SettingsContext";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import { useInventory } from "./hooks/useInventory";
 import { useSales } from "./hooks/useSales";
 import { useGoogleFont } from "./hooks/useGoogleFont";
@@ -14,13 +14,17 @@ import AcquisitionView from "./components/acquisition/AcquisitionView";
 import ReportsView from "./components/reports/ReportsView";
 import SettingsView from "./components/settings/SettingsView";
 import AccountManagement from "./components/accounts/AccountManagement";
+import LoginView from "./components/auth/LoginView";
 
 function AppShell() {
+  const { currentUser, logout } = useAuth();
   const [tab, setTab] = useState("dashboard");
   const inventory = useInventory();
   const sales = useSales();
 
   useGoogleFont();
+
+  if (!currentUser) return <LoginView />;
 
   // The only orchestrated action in the app: completing a sale touches
   // both hooks. We only record a transaction if the unit was actually
@@ -49,7 +53,7 @@ function AppShell() {
 
   return (
     <div className="min-h-screen w-full flex bg-[#f6f5f1] text-[#16211f]" style={{ fontFamily: "'Inter', sans-serif" }}>
-      <Sidebar activeTab={tab} onSelectTab={setTab} />
+      <Sidebar activeTab={tab} onSelectTab={setTab} onLogout={logout} />
 
       <main className="flex-1 px-8 py-7 max-w-6xl">
         {tab === "dashboard" && (
