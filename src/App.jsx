@@ -19,12 +19,15 @@ import LoginView from "./components/auth/LoginView";
 function AppShell() {
   const { currentUser, logout } = useAuth();
   const [tab, setTab] = useState("dashboard");
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const inventory = useInventory();
   const sales = useSales();
 
   useGoogleFont();
 
   if (!currentUser) return <LoginView />;
+
+  function handleSelectTab(k) { setTab(k); setDrawerOpen(false); }
 
   // The only orchestrated action in the app: completing a sale touches
   // both hooks. We only record a transaction if the unit was actually
@@ -52,10 +55,18 @@ function AppShell() {
   }
 
   return (
-    <div className="min-h-screen w-full flex bg-[#f6f5f1] text-[#16211f]" style={{ fontFamily: "'Inter', sans-serif" }}>
-      <Sidebar activeTab={tab} onSelectTab={setTab} onLogout={logout} />
+    <div className="min-h-screen w-full flex flex-col lg:flex-row bg-[#f6f5f1] text-[#16211f]" style={{ fontFamily: "'Inter', sans-serif" }}>
+      {/* Mobile top bar */}
+      <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between bg-[#0e3b3a] text-[#cfe6df] px-4 py-3">
+        <button onClick={() => setDrawerOpen(o => !o)} className="w-9 h-9 grid place-items-center rounded-lg border border-[#1e504d]" aria-label="Menu">☰</button>
+        <div className="font-semibold text-sm" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Showroom <span className="text-teal-300">Orisma</span></div>
+        <div className="w-9" />
+      </header>
 
-      <main className="flex-1 px-8 py-7 max-w-6xl">
+      {/* Sidebar: drawer on mobile, fixed on desktop */}
+      <Sidebar activeTab={tab} onSelectTab={handleSelectTab} onLogout={logout} open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+
+      <main className="flex-1 px-4 lg:px-8 py-5 lg:py-7 max-w-6xl w-full min-w-0 overflow-x-hidden">
         {tab === "dashboard" && (
           <DashboardView
             availableUnits={inventory.availableUnits}

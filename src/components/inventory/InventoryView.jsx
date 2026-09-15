@@ -51,10 +51,10 @@ export default function InventoryView({ availableUnits, allUnits, onEdit, onDele
         />
       </div>
 
-      <div className="flex bg-white border border-[#e6e4dd] rounded-xl overflow-hidden">
+      <div className="flex flex-col lg:flex-row bg-white border border-[#e6e4dd] rounded-xl overflow-hidden">
         <BrandRail availableUnits={availableUnits} active={brandFilter} onSelect={setBrandFilter} />
 
-        <div className="flex-1 p-5 min-w-0">
+        <div className="flex-1 p-4 lg:p-5 min-w-0 overflow-x-auto">
           <div className="flex items-baseline justify-between mb-3">
             <div className="text-[13px] font-semibold">{activeLabel}</div>
             <div className="text-[12px] text-[#7c8783]">{filtered.length} unit{filtered.length === 1 ? "" : "s"}</div>
@@ -62,7 +62,9 @@ export default function InventoryView({ availableUnits, allUnits, onEdit, onDele
 
           <InventoryToolbar query={query} onQueryChange={setQuery} />
 
-          <InventoryTable units={filtered} onEdit={setEditing} onDelete={onDelete} />
+          <div className="overflow-x-auto -mx-4 lg:mx-0">
+            <InventoryTable units={filtered} onEdit={setEditing} onDelete={onDelete} />
+          </div>
         </div>
       </div>
 

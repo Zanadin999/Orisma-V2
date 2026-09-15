@@ -5,13 +5,13 @@ import { useSettings } from "../../context/SettingsContext";
 import { useAuth } from "../../context/AuthContext";
 import { LogOut } from "lucide-react";
 
-export default function Sidebar({ activeTab, onSelectTab, onLogout }) {
+export default function Sidebar({ activeTab, onSelectTab, onLogout, open, onClose }) {
   const { settings, t } = useSettings();
   const { currentUser } = useAuth();
   const showUser = currentUser != null;
   const initials = showUser ? currentUser.name.split(" ").map(w => w[0]).join("").slice(0,2).toUpperCase() : "??";
-  return (
-    <aside className="w-56 shrink-0 bg-[#0e3b3a] text-[#cfe6df] flex flex-col p-5">
+  const content = (
+    <>
       <div
         className="text-white font-semibold text-lg mb-8 tracking-tight truncate"
         style={{ fontFamily: "'Space Grotesk', sans-serif" }}
@@ -52,6 +52,24 @@ export default function Sidebar({ activeTab, onSelectTab, onLogout }) {
           </button>
         )}
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop: always visible */}
+      <aside className="hidden lg:flex w-56 shrink-0 bg-[#0e3b3a] text-[#cfe6df] flex-col p-5">
+        {content}
+      </aside>
+      {/* Mobile: drawer overlay - does not affect desktop layout */}
+      {open && (
+        <div className="lg:hidden fixed inset-0 z-40 flex">
+          <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+          <aside className="relative w-[72%] max-w-[280px] bg-[#0e3b3a] text-[#cfe6df] flex flex-col p-5">
+            {content}
+          </aside>
+        </div>
+      )}
+    </>
   );
 }

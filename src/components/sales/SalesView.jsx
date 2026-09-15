@@ -18,14 +18,14 @@ export default function SalesView({
         Completing a sale here marks the unit sold in Inventory automatically.
       </p>
 
-      <div className="grid grid-cols-4 gap-4 mb-5">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-5">
         <KpiCard label="Units sold" value={transactions.length} />
         <KpiCard label="Total revenue" value={rupiah(totalRevenue)} />
         <KpiCard label="Net income" value={rupiah(totalNetIncome)} valueClassName={totalNetIncome < 0 ? "text-red-600" : ""} />
         <KpiCard label="Last sale" value={lastSale ? fmtDate(lastSale.soldDate) : "—"} />
       </div>
 
-      <div className="grid grid-cols-[1fr_1.3fr] gap-4 mb-4">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.3fr] gap-4 mb-4">
         <LogSaleForm availableUnits={availableUnits} onLogSale={onLogSale} />
         <TransactionList transactions={transactions} />
       </div>

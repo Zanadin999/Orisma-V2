@@ -19,13 +19,13 @@ export default function AcquisitionView({ units, availableUnits, onAdd, onTradeI
         Purchase units or process trade-in transactions — units added straight to Inventory.
       </p>
 
-      <div className="grid grid-cols-3 gap-4 mb-5">
+      <div className="grid grid-cols-3 gap-3 lg:gap-4 mb-5">
         <KpiCard label="Units acquired (all time)" value={totalUnits} />
         <KpiCard label="Currently available" value={available} />
         <KpiCard label="Total capital invested" value={rupiah(totalSpend)} />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-white border border-[#e6e4dd] rounded-xl p-5">
           <div className="text-[13px] font-semibold mb-4">Acquire a unit</div>
           <AcquireUnitForm 

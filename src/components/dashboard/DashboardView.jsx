@@ -46,19 +46,19 @@ export default function DashboardView({
         />
       </div>
 
-      <div className="grid grid-cols-4 gap-4 mb-5">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-5">
         <KpiCard label="Units in stock" value={availableUnits.length} />
         <KpiCard label="Stock value (cost)" value={rupiah(totalAssetValue)} />
         <KpiCard label="Units sold" value={filteredTransactions.length} />
         <KpiCard label="Net income" value={rupiah(filteredNetIncome)} valueClassName={filteredNetIncome < 0 ? "text-red-600" : ""} />
       </div>
 
-      <div className="grid grid-cols-[1.55fr_1fr] gap-4 mb-4">
+      <div className="grid grid-cols-1 lg:grid-cols-[1.55fr_1fr] gap-4 mb-4">
         <SalesChart transactions={filteredTransactions} />
         <AgingInventory availableUnits={availableUnits} />
       </div>
 
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
         <StockByBrand availableUnits={availableUnits} />
         <SellingTrendByBrand transactions={filteredTransactions} />
       </div>

@@ -31,7 +31,7 @@ export default function SettingsView() {
       </div>
       <p className="text-[13.5px] text-[#7c8783] mb-5">Customize business rules, display, and shop identity. All settings are saved locally.</p>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Business Rules */}
         <div className="bg-white border border-[#e6e4dd] rounded-xl p-5">
           <div className="text-[13px] font-semibold mb-4">Business Rules</div>
@@ -41,7 +41,7 @@ export default function SettingsView() {
               <input type="number" step="0.1" min="0" max="10" value={settings.zakatRate} onChange={e => update({ zakatRate: Number(e.target.value) })} className="w-full border border-[#e6e4dd] rounded-lg px-3 py-2 text-[13px] mt-1" />
               <div className="text-[11px] text-[#7c8783] mt-1">Applied as {settings.zakatRate}% × Laba Kotor. Current: {rupiah(1000000 * settings.zakatRate/100)} per Rp 1jt profit.</div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="text-[11px] text-[#7c8783]">Default Tenaga (Rp)</label>
                 <input type="number" step="10000" value={settings.tenagaDefault} onChange={e => update({ tenagaDefault: Number(e.target.value) })} className="w-full border border-[#e6e4dd] rounded-lg px-3 py-2 text-[13px] mt-1" />

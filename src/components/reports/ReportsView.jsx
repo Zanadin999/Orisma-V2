@@ -70,7 +70,7 @@ export default function ReportsView({
         Built entirely from live Inventory and Sales data.
       </p>
 
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-5">
         <TimeframeFilter
           timeframe={timeframe}
           onTimeframeChange={setTimeframe}
@@ -79,13 +79,13 @@ export default function ReportsView({
           onCustomStartChange={setCustomStart}
           onCustomEndChange={setCustomEnd}
         />
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <ExportButtons 
             onExportExcel={() => exportReportsToExcel(filteredTransactions, availableUnits)}
             onExportCSV={() => exportReportsToCSV(filteredTransactions)}
             label="Export Filtered"
           />
-          <div className="h-6 w-px bg-[#e6e4dd]"></div>
+          <div className="hidden lg:block h-6 w-px bg-[#e6e4dd]"></div>
           <ExportButtons 
             onExportExcel={() => exportCompleteReport(allUnits, transactions)}
             onExportCSV={() => exportCompleteReportCSV(allUnits, transactions)}
@@ -94,7 +94,7 @@ export default function ReportsView({
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-4 mb-5">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-5">
         <KpiCard label="Stock value (cost)" value={rupiah(totalAssetValue)} />
         <KpiCard label="Units in stock" value={availableUnits.length} />
         <KpiCard label="Total revenue" value={rupiah(filteredRevenue)} />
@@ -105,12 +105,12 @@ export default function ReportsView({
         <RevenueChart transactions={filteredTransactions} />
       </div>
 
-      <div className="grid grid-cols-[1.3fr_1fr] gap-4 mb-4">
+      <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-4 mb-4">
         <StockByBrand availableUnits={availableUnits} />
         <TransactionList transactions={filteredTransactions} />
       </div>
 
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
         <SellingTrendByBrand transactions={filteredTransactions} />
         <div className="bg-white border border-[#e6e4dd] rounded-xl p-5 flex flex-col">
           <div className="text-[13px] font-semibold mb-3">Stock Value by Brand</div>
