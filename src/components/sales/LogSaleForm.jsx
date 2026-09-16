@@ -4,7 +4,18 @@ import BrandBadge from "../shared/BrandBadge";
 import { minPrice, saleMath, rupiah, todayISO } from "../../utils/pricing";
 
 export default function LogSaleForm({ availableUnits, onLogSale }) {
-  const [unitId, setUnitId] = useState(availableUnits[0]?.id ?? "");
+  const [search, setSearch] = useState("");
+  const filteredUnits = availableUnits.filter(u => {
+    const q = search.trim().toLowerCase();
+    if (!q) return true;
+    return u.name.toLowerCase().includes(q) || u.plate.toLowerCase().includes(q);
+  });
+  const [unitId, setUnitId] = useState(filteredUnits[0]?.id ?? "");
+  // keep selection in sync when filter changes
+  React.useEffect(() => {
+    if (filteredUnits.length === 0) { setUnitId(""); return; }
+    if (!filteredUnits.some(u => String(u.id) === String(unitId))) setUnitId(filteredUnits[0].id);
+  }, [search, availableUnits]);
   const [sellingPrice, setSellingPrice] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [downPayment, setDownPayment] = useState("");
@@ -62,15 +73,23 @@ export default function LogSaleForm({ availableUnits, onLogSale }) {
       <div className="text-[13px] font-semibold mb-4">Log a sale</div>
       <form onSubmit={handleSubmit} className="space-y-3">
         <div>
-          <label className="text-[12px] text-[#7c8783] block mb-1">Unit</label>
+          <label className="text-[12px] text-[#7c8783] block mb-1">Unit — search by Name or Plat</label>
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Cari nama atau plat, e.g. Vario atau B 1234"
+            className="w-full border border-[#e6e4dd] rounded-lg px-3 py-2 text-[13px] outline-none focus:border-teal-600 mb-2"
+          />
           <select
             value={unitId}
             onChange={e => setUnitId(e.target.value)}
             className="w-full border border-[#e6e4dd] rounded-lg px-3 py-2 text-[13px] outline-none bg-white"
           >
-            {availableUnits.map(u => (
+            {filteredUnits.length === 0 ? (
+              <option value="">No units match "{search}"</option>
+            ) : filteredUnits.map(u => (
               <option key={u.id} value={u.id}>
-                {u.name} — {u.plate} — Rec. Min {rupiah(minPrice(u))}
+                {u.name} — {u.plate}
               </option>
             ))}
           </select>
