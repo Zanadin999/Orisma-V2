@@ -1,21 +1,38 @@
-import React, { useState } from "react";
-import { ShoppingCart } from "lucide-react";
+import React, { useState, useRef, useEffect } from "react";
+import { ShoppingCart, Search, X } from "lucide-react";
 import BrandBadge from "../shared/BrandBadge";
 import { minPrice, saleMath, rupiah, todayISO } from "../../utils/pricing";
 
 export default function LogSaleForm({ availableUnits, onLogSale }) {
   const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(false);
+  const [unitId, setUnitId] = useState(availableUnits[0]?.id ?? "");
+  const ref = useRef(null);
+
   const filteredUnits = availableUnits.filter(u => {
     const q = search.trim().toLowerCase();
     if (!q) return true;
     return u.name.toLowerCase().includes(q) || u.plate.toLowerCase().includes(q);
   });
-  const [unitId, setUnitId] = useState(filteredUnits[0]?.id ?? "");
-  // keep selection in sync when filter changes
-  React.useEffect(() => {
+
+  // sync selection when filter changes
+  useEffect(() => {
     if (filteredUnits.length === 0) { setUnitId(""); return; }
     if (!filteredUnits.some(u => String(u.id) === String(unitId))) setUnitId(filteredUnits[0].id);
-  }, [search, availableUnits]);
+  }, [search]);
+
+  useEffect(() => {
+    if (availableUnits.length && !availableUnits.some(u => String(u.id) === String(unitId))) {
+      setUnitId(availableUnits[0].id);
+    }
+  }, [availableUnits]);
+
+  useEffect(() => {
+    function onDocClick(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
+
   const [sellingPrice, setSellingPrice] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [downPayment, setDownPayment] = useState("");
@@ -25,13 +42,20 @@ export default function LogSaleForm({ availableUnits, onLogSale }) {
   const [notes, setNotes] = useState("");
   const [soldDate, setSoldDate] = useState(todayISO());
 
-  const unit = availableUnits.find(u => u.id === Number(unitId));
+  const unit = availableUnits.find(u => String(u.id) === String(unitId));
   const floor = unit ? minPrice(unit) : 0;
   const price = Number(sellingPrice) || 0;
   const belowMin = unit && sellingPrice !== "" && price < floor;
   const math = unit ? saleMath(unit, price) : null;
   const commission = paymentMethod === "credit" ? 700000 : 0;
   const canSubmit = unit && sellingPrice !== "" && buyerName.trim() && buyerAddress.trim();
+
+  function selectUnit(id) {
+    setUnitId(id);
+    const u = availableUnits.find(x => String(x.id) === String(id));
+    if (u) setSearch(`${u.name} — ${u.plate}`);
+    setOpen(false);
+  }
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -55,6 +79,8 @@ export default function LogSaleForm({ availableUnits, onLogSale }) {
     setBuyerAddress("");
     setNotes("");
     setSoldDate(todayISO());
+    setSearch("");
+    setOpen(false);
   }
 
   if (availableUnits.length === 0) {
@@ -72,27 +98,51 @@ export default function LogSaleForm({ availableUnits, onLogSale }) {
     <div className="bg-white border border-[#e6e4dd] rounded-xl p-5">
       <div className="text-[13px] font-semibold mb-4">Log a sale</div>
       <form onSubmit={handleSubmit} className="space-y-3">
-        <div>
+        <div ref={ref} className="relative">
           <label className="text-[12px] text-[#7c8783] block mb-1">Unit — search by Name or Plat</label>
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Cari nama atau plat, e.g. Vario atau B 1234"
-            className="w-full border border-[#e6e4dd] rounded-lg px-3 py-2 text-[13px] outline-none focus:border-teal-600 mb-2"
-          />
-          <select
-            value={unitId}
-            onChange={e => setUnitId(e.target.value)}
-            className="w-full border border-[#e6e4dd] rounded-lg px-3 py-2 text-[13px] outline-none bg-white"
-          >
-            {filteredUnits.length === 0 ? (
-              <option value="">No units match "{search}"</option>
-            ) : filteredUnits.map(u => (
-              <option key={u.id} value={u.id}>
-                {u.name} — {u.plate}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7c8783]" />
+            <input
+              value={search}
+              onChange={e => { setSearch(e.target.value); setOpen(true); }}
+              onFocus={() => setOpen(true)}
+              placeholder="Ketik nama atau plat, e.g. Vario atau B 1234 — menampilkan unit yang tersedia"
+              className="w-full border border-[#e6e4dd] rounded-lg pl-9 pr-8 py-2 text-[13px] outline-none focus:border-teal-600"
+            />
+            {search && (
+              <button type="button" onClick={() => { setSearch(""); setOpen(true); }} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-[#7c8783] hover:text-[#0e3b3a]">
+                <X size={14} />
+              </button>
+            )}
+          </div>
+          {open && (
+            <div className="absolute z-20 mt-1 w-full bg-white border border-[#e6e4dd] rounded-lg shadow-lg max-h-64 overflow-auto">
+              {filteredUnits.length === 0 ? (
+                <div className="px-3 py-3 text-[13px] text-[#7c8783]">No units match "{search}" — showing 0 of {availableUnits.length}</div>
+              ) : (
+                <>
+                  <div className="px-3 py-1.5 text-[11px] text-[#7c8783] border-b border-[#e6e4dd]">Showing {filteredUnits.length} of {availableUnits.length} available</div>
+                  {filteredUnits.slice(0, 30).map(u => (
+                    <button
+                      key={u.id}
+                      type="button"
+                      onClick={() => selectUnit(u.id)}
+                      className={`w-full text-left px-3 py-2.5 hover:bg-[#f6f5f1] flex items-center justify-between gap-2 ${String(u.id) === String(unitId) ? "bg-[#f6f5f1]" : ""}`}
+                    >
+                      <div className="min-w-0">
+                        <div className="text-[13px] font-medium truncate">{u.name} — {u.plate}</div>
+                        <div className="text-[11px] text-[#7c8783]">{u.year} • {u.category}</div>
+                      </div>
+                      {String(u.id) === String(unitId) && <span className="text-[11px] text-teal-700 font-semibold">✓ Selected</span>}
+                    </button>
+                  ))}
+                </>
+              )}
+            </div>
+          )}
+          {unit && !open && (
+            <div className="mt-1.5 text-[11px] text-[#7c8783]">Selected: <b className="text-[#0e3b3a]">{unit.name} — {unit.plate}</b> — click field to change</div>
+          )}
         </div>
 
         {unit && (
