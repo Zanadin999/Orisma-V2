@@ -3,7 +3,7 @@ import { INITIAL_UNITS } from "../data/unitsData";
 import { costBasis, todayISO } from "../utils/pricing";
 import { UNCATEGORIZED } from "../data/brands";
 
-const STORAGE_KEY = "orisma_units_v22";
+const STORAGE_KEY = "orisma_units_v23";
 
 function loadStoredUnits() {
   try {
