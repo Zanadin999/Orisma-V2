@@ -76,10 +76,18 @@ export function unitToForm(u) {
 // `onChange(field, value)` follow the same shape in all three places.
 export default function UnitFormFields({ form, onChange }) {
   const { categories: brands } = useCategoriesContext();
+  const hargaUnit = Number(form.unitPrice) || 0;
+  const costUnit = Number(form.costUnit) || 0;
+  const tenaga = Number(form.additionalCost1) || 0;
+  const komisi = Number(form.additionalCost2) || 0;
+  const lain = Number(form.additionalCost3) || 0;
+  const hargaSetelah = hargaUnit + costUnit + tenaga + komisi + lain;
   const preview = minPrice({
     unitPrice: form.unitPrice,
     costUnit: form.costUnit,
-    additionalCost: form.additionalCost,
+    additionalCost1: form.additionalCost1,
+    additionalCost2: form.additionalCost2,
+    additionalCost3: form.additionalCost3,
   });
 
   return (
@@ -168,6 +176,28 @@ export default function UnitFormFields({ form, onChange }) {
           className="w-full border border-[#e6e4dd] rounded-lg px-3 py-2 text-[13px] outline-none focus:border-teal-600"
         />
       </Field>
+
+      {/* Formula: Harga Unit & Cost Unit */}
+      <div className="rounded-xl border border-[#e6e4dd] bg-[#fafaf8] p-3 space-y-2">
+        <div className="text-[11px] font-semibold text-[#0e3b3a]">Formula — Harga Setelah Perbaikan</div>
+        <div className="text-[11px] text-[#7c8783] leading-relaxed">
+          <div className="flex flex-wrap gap-x-1 gap-y-1 items-center text-[11px]">
+            <span className="px-1.5 py-0.5 bg-white border border-[#e6e4dd] rounded">Harga Unit<br/><b>{rupiah(hargaUnit)}</b></span>
+            <span>+</span>
+            <span className="px-1.5 py-0.5 bg-white border border-[#e6e4dd] rounded">Cost Unit<br/><b>{rupiah(costUnit)}</b></span>
+            <span>+</span>
+            <span className="px-1.5 py-0.5 bg-white border border-[#e6e4dd] rounded">Tenaga<br/><b>{rupiah(tenaga)}</b></span>
+            <span>+</span>
+            <span className="px-1.5 py-0.5 bg-white border border-[#e6e4dd] rounded">Komisi<br/><b>{rupiah(komisi)}</b></span>
+            <span>+</span>
+            <span className="px-1.5 py-0.5 bg-white border border-[#e6e4dd] rounded">Lain<br/><b>{rupiah(lain)}</b></span>
+            <span>=</span>
+            <span className="px-2 py-1 bg-[#0e3b3a] text-white rounded font-semibold">{rupiah(hargaSetelah)}</span>
+          </div>
+          <div className="text-[11px] mt-1">Cost Unit <span className="font-mono">= Tenaga + Komisi + Lain</span> (simplified) → {rupiah(tenaga+komisi+lain)}</div>
+          <div className="text-[11px]">Recommended Minimum = <b>Harga Setelah Perbaikan</b> = {rupiah(preview)}</div>
+        </div>
+      </div>
 
       <div className="text-[12.5px] font-semibold text-[#0e3b3a] pt-1 pb-0.5">
         Unit Acquirement Detail
