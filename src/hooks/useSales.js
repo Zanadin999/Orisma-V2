@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { INITIAL_SALES } from "../data/salesData";
 import { minPrice, saleMath } from "../utils/pricing";
 
-const STORAGE_KEY = "orisma_sales_v23";
+const STORAGE_KEY = "orisma_sales_v24";
 function loadStoredSales() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
