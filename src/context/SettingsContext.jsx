@@ -6,6 +6,7 @@ const DEFAULTS = {
   shopName: "Showroom Orisma",
   shopShortName: "Orisma",
   zakatRate: 2.5, // percent for UI
+  repairFeeDefault: 0,
   tenagaDefault: 130000,
   komisiDefault: 0,
   lainDefault: 10000,
@@ -124,13 +125,14 @@ export function getStoredDefaults() {
     if (raw) {
       const s = JSON.parse(raw);
       return {
+        repairFee: Number(s.repairFeeDefault ?? s.costUnitDefault ?? 0),
         tenaga: Number(s.tenagaDefault ?? 130000),
         komisi: Number(s.komisiDefault ?? 0),
         lain: Number(s.lainDefault ?? 10000),
       };
     }
   } catch {}
-  return { tenaga: 130000, komisi: 0, lain: 10000 };
+  return { repairFee: 0, tenaga: 130000, komisi: 0, lain: 10000 };
 }
 
 export { DEFAULTS };

@@ -43,6 +43,10 @@ export default function SettingsView() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
+                <label className="text-[11px] text-[#7c8783]">Repair Fee / Biaya Perbaikan (Rp)</label>
+                <input type="number" step="10000" value={settings.repairFeeDefault} onChange={e => update({ repairFeeDefault: Number(e.target.value) })} className="w-full border border-[#e6e4dd] rounded-lg px-3 py-2 text-[13px] mt-1" />
+              </div>
+              <div>
                 <label className="text-[11px] text-[#7c8783]">Default Tenaga (Rp)</label>
                 <input type="number" step="10000" value={settings.tenagaDefault} onChange={e => update({ tenagaDefault: Number(e.target.value) })} className="w-full border border-[#e6e4dd] rounded-lg px-3 py-2 text-[13px] mt-1" />
               </div>

@@ -45,23 +45,22 @@ export function daysInStock(iso) {
   return Math.max(0, Math.round((Date.now() - d.getTime()) / 86400000));
 }
 
-// Modal (capital) tied up in a unit: what it cost to acquire and prep.
-// Includes legacy `additionalCost` for seed units that predate the TENAGA/KOMISI/LAIN split.
+// Modal (capital) tied up in a unit: Cost Basis = Harga Beli + Repair Fee + (Tenaga+Komisi+Lain)
 export function costBasis(unit) {
   return (Number(unit.unitPrice) || 0) + 
-         (Number(unit.costUnit) || 0) + 
-         (Number(unit.additionalCost) || 0) + 
+         (Number(unit.repairFee ?? unit.costUnit ?? 0) || 0) + 
+         (Number(unit.additionalCost ?? 0) || 0) + 
          (Number(unit.additionalCost1) || 0) + 
          (Number(unit.additionalCost2) || 0) + 
          (Number(unit.additionalCost3) || 0);
 }
 
-// Base modal (HARGA MODAL) alone — without TENAGA/KOMISI/LAIN, matches old ledger col 12
+// Base Harga Beli + Repair Fee (without Tenaga/Komisi/Lain)
 export function hargaModal(unit) {
-  return (Number(unit.unitPrice) || 0) + (Number(unit.costUnit) || 0) + (Number(unit.additionalCost) || 0);
+  return (Number(unit.unitPrice) || 0) + (Number(unit.repairFee ?? unit.costUnit ?? 0) || 0) + (Number(unit.additionalCost) || 0);
 }
 
-// Harga Minimum Unit = Harga Unit + Cost Unit + Additional Cost
+// Harga Minimum Unit = Harga Beli + Repair Fee + Tenaga+Komisi+Lain
 export function minPrice(unit) {
   return costBasis(unit);
 }

@@ -171,8 +171,8 @@ export function exportReportsToExcel(transactions, availableUnits) {
   XLSX.writeFile(wb, `Reports_${new Date().toISOString().slice(0, 10)}.xlsx`);
 }
 
-// Export complete report — NEW 22-col layout (no CLOSE BOOK)
-// 1 Date Acquired | 2 Date Sold | 3 Days | 4 Status | 5 Brand | 6 Nama Kendaraan | 7 Tahun | 8 Plat | 9 Nama Pemilik | 10 Alamat Pemilik | 11 Harga Unit | 12 Tenaga | 13 Komisi | 14 Lain-lain | 15 Harga Setelah Perbaikan | 16 Harga Terjual | 17 Zakat 2.5% | 18 Zakat Fee | 19 Net Income | 20 Keterangan | 21 Nama Pembeli | 22 Alamat Pembeli
+// Export complete report — NEW 23-col layout (no CLOSE BOOK)
+// 1 Date Acquired | 2 Date Sold | 3 Days | 4 Status | 5 Brand | 6 Nama Kendaraan | 7 Tahun | 8 Plat | 9 Nama Pemilik | 10 Alamat Pemilik | 11 Harga Beli | 12 Repair Fee / Biaya Perbaikan | 13 Tenaga | 14 Komisi | 15 Lain-lain | 16 Harga Setelah Perbaikan | 17 Harga Terjual | 18 Zakat 2.5% | 19 Zakat Fee | 20 Net Income | 21 Keterangan | 22 Nama Pembeli | 23 Alamat Pembeli
 export function exportCompleteReport(units, transactions) {
   const wb = XLSX.utils.book_new();
   
@@ -186,8 +186,9 @@ export function exportCompleteReport(units, transactions) {
     const isSold = u.status === "sold" && !!tx;
     const isTradein = isSold && (u.saleType === "tradein" || tx.saleType === "tradein" || tx.paymentMethod === "tradein");
 
-    // Cost breakdown: Harga Unit = unitPrice (+legacy costUnit/additionalCost)
-    const hargaUnit = (Number(u.unitPrice) || 0) + (Number(u.costUnit) || 0) + (Number(u.additionalCost) || 0);
+    // Cost breakdown: Cost Basis = Harga Beli + Repair Fee + (Tenaga+Komisi+Lain) — every cost is explicit
+    const hargaBeli = Number(u.unitPrice) || 0;
+    const repairFee = Number(u.repairFee ?? u.costUnit ?? u.additionalCost ?? 0) || 0;
     const rawTenaga = u.additionalCost1;
     const rawKomisi = u.additionalCost2;
     const rawLain = u.additionalCost3;
@@ -195,7 +196,7 @@ export function exportCompleteReport(units, transactions) {
     const komisi = rawKomisi === undefined || rawKomisi === null || rawKomisi === "" ? 0 : Number(rawKomisi) || 0;
     const lain = rawLain === undefined || rawLain === null || rawLain === "" ? 10000 : Number(rawLain) || 0;
 
-    const hargaSetelahPerbaikan = hargaUnit + tenaga + komisi + lain;
+    const hargaSetelahPerbaikan = hargaBeli + repairFee + tenaga + komisi + lain;
     const days = calcDays(u.dateAcquired, isSold ? tx.soldDate : "");
 
     let hargaTerjual = "---";
@@ -226,7 +227,8 @@ export function exportCompleteReport(units, transactions) {
       "Plat": u.plate || "---",
       "Nama Pemilik": u.ownerName || "---",
       "Alamat Pemilik": u.ownerAddress || "---",
-      "Harga Unit (Acquisition)": formatRp(hargaUnit),
+      "Harga Beli (Acquisition)": formatRp(hargaBeli),
+      "Repair Fee / Biaya Perbaikan": formatRp(repairFee),
       "Tenaga (Komisi Bonus)": formatRp(tenaga),
       "Komisi": komisi ? formatRp(komisi) : "",
       "Lain-lain": formatRp(lain),
@@ -298,7 +300,8 @@ export function exportCompleteReportCSV(units, transactions) {
       "Plat": u.plate || "---",
       "Nama Pemilik": u.ownerName || "---",
       "Alamat Pemilik": u.ownerAddress || "---",
-      "Harga Unit (Acquisition)": formatRp(hargaUnit),
+      "Harga Beli (Acquisition)": formatRp(hargaBeli),
+      "Repair Fee / Biaya Perbaikan": formatRp(repairFee),
       "Tenaga (Komisi Bonus)": formatRp(tenaga),
       "Komisi": komisi ? formatRp(komisi) : "",
       "Lain-lain": formatRp(lain),

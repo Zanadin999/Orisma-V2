@@ -1,6 +1,7 @@
 import React from "react";
 import { useCategoriesContext } from "../../context/CategoriesContext";
 import { minPrice, rupiah, todayISO } from "../../utils/pricing";
+import CurrencyInput from "../shared/CurrencyInput";
 
 export function Field({ label, className = "", children }) {
   return (
@@ -23,7 +24,7 @@ export function emptyUnitForm() {
         year: String(new Date().getFullYear()),
         plate: "",
         unitPrice: "",
-        costUnit: "",
+        repairFee: String(s.repairFeeDefault ?? s.costUnitDefault ?? 0),
         additionalCost1: String(s.tenagaDefault ?? 130000),
         additionalCost2: String(s.komisiDefault ?? 0),
         additionalCost3: String(s.lainDefault ?? 10000),
@@ -41,7 +42,7 @@ export function emptyUnitForm() {
     year: String(new Date().getFullYear()),
     plate: "",
     unitPrice: "",
-    costUnit: "",
+    repairFee: "",
     additionalCost1: "130000",
     additionalCost2: "0",
     additionalCost3: "10000",
@@ -59,8 +60,8 @@ export function unitToForm(u) {
     category: u.category,
     year: String(u.year),
     plate: u.plate,
-    unitPrice: String(u.unitPrice),
-    costUnit: String(u.costUnit),
+    unitPrice: String(u.unitPrice ?? ""),
+    repairFee: String(u.repairFee ?? u.costUnit ?? 0),
     additionalCost1: String(u.additionalCost1 || 0),
     additionalCost2: String(u.additionalCost2 || 0),
     additionalCost3: String(u.additionalCost3 || 0),
@@ -76,15 +77,15 @@ export function unitToForm(u) {
 // `onChange(field, value)` follow the same shape in all three places.
 export default function UnitFormFields({ form, onChange }) {
   const { categories: brands } = useCategoriesContext();
-  const hargaUnit = Number(form.unitPrice) || 0;
-  const costUnit = Number(form.costUnit) || 0;
+  const hargaBeli = Number(form.unitPrice) || 0;
+  const repairFee = Number(form.repairFee ?? form.costUnit) || 0;
   const tenaga = Number(form.additionalCost1) || 0;
   const komisi = Number(form.additionalCost2) || 0;
   const lain = Number(form.additionalCost3) || 0;
-  const hargaSetelah = hargaUnit + costUnit + tenaga + komisi + lain;
+  const hargaSetelah = hargaBeli + repairFee + tenaga + komisi + lain;
   const preview = minPrice({
     unitPrice: form.unitPrice,
-    costUnit: form.costUnit,
+    repairFee: form.repairFee ?? form.costUnit,
     additionalCost1: form.additionalCost1,
     additionalCost2: form.additionalCost2,
     additionalCost3: form.additionalCost3,
@@ -136,55 +137,34 @@ export default function UnitFormFields({ form, onChange }) {
         />
       </Field>
 
-      <div className="flex gap-3">
-        <Field label="Harga Unit (Rp)" className="flex-1">
-          <input
-            type="number" min="0" step="50000" required value={form.unitPrice}
-            onChange={e => onChange("unitPrice", e.target.value)}
-            className="w-full border border-[#e6e4dd] rounded-lg px-3 py-2 text-[13px] outline-none focus:border-teal-600"
-          />
-        </Field>
-        <Field label="Cost Unit (Rp)" className="flex-1">
-          <input
-            type="number" min="0" step="50000" value={form.costUnit}
-            onChange={e => onChange("costUnit", e.target.value)}
-            className="w-full border border-[#e6e4dd] rounded-lg px-3 py-2 text-[13px] outline-none focus:border-teal-600"
-          />
-        </Field>
-      </div>
+      <Field label="Harga Beli (Rp) — Purchase Price">
+        <CurrencyInput value={form.unitPrice} onChange={v => onChange("unitPrice", v)} placeholder="Rp 0" />
+      </Field>
+
+      <Field label="Repair Fee / Biaya Perbaikan (Rp)">
+        <CurrencyInput value={form.repairFee ?? form.costUnit} onChange={v => onChange("repairFee", v)} placeholder="Rp 0" />
+      </Field>
 
       <Field label="TENAGA - Additional Cost 1 (Rp)">
-        <input
-          type="number" min="0" step="50000" value={form.additionalCost1}
-          onChange={e => onChange("additionalCost1", e.target.value)}
-          className="w-full border border-[#e6e4dd] rounded-lg px-3 py-2 text-[13px] outline-none focus:border-teal-600"
-        />
+        <CurrencyInput value={form.additionalCost1} onChange={v => onChange("additionalCost1", v)} placeholder="Rp 0" />
       </Field>
 
       <Field label="KOMISI - Additional Cost 2 (Rp)">
-        <input
-          type="number" min="0" step="50000" value={form.additionalCost2}
-          onChange={e => onChange("additionalCost2", e.target.value)}
-          className="w-full border border-[#e6e4dd] rounded-lg px-3 py-2 text-[13px] outline-none focus:border-teal-600"
-        />
+        <CurrencyInput value={form.additionalCost2} onChange={v => onChange("additionalCost2", v)} placeholder="Rp 0" />
       </Field>
 
       <Field label="LAIN-LAIN - Additional Cost 3 (Rp)">
-        <input
-          type="number" min="0" step="50000" value={form.additionalCost3}
-          onChange={e => onChange("additionalCost3", e.target.value)}
-          className="w-full border border-[#e6e4dd] rounded-lg px-3 py-2 text-[13px] outline-none focus:border-teal-600"
-        />
+        <CurrencyInput value={form.additionalCost3} onChange={v => onChange("additionalCost3", v)} placeholder="Rp 0" />
       </Field>
 
-      {/* Formula: Harga Unit & Cost Unit */}
+      {/* Formula: Cost Basis */}
       <div className="rounded-xl border border-[#e6e4dd] bg-[#fafaf8] p-3 space-y-2">
-        <div className="text-[11px] font-semibold text-[#0e3b3a]">Formula — Harga Setelah Perbaikan</div>
+        <div className="text-[11px] font-semibold text-[#0e3b3a]">Formula — Cost Basis = Harga Beli + Repair Fee + (Tenaga + Komisi + Lain)</div>
         <div className="text-[11px] text-[#7c8783] leading-relaxed">
           <div className="flex flex-wrap gap-x-1 gap-y-1 items-center text-[11px]">
-            <span className="px-1.5 py-0.5 bg-white border border-[#e6e4dd] rounded">Harga Unit<br/><b>{rupiah(hargaUnit)}</b></span>
+            <span className="px-1.5 py-0.5 bg-white border border-[#e6e4dd] rounded">Harga Beli<br/><b>{rupiah(hargaBeli)}</b></span>
             <span>+</span>
-            <span className="px-1.5 py-0.5 bg-white border border-[#e6e4dd] rounded">Cost Unit<br/><b>{rupiah(costUnit)}</b></span>
+            <span className="px-1.5 py-0.5 bg-white border border-[#e6e4dd] rounded">Repair Fee<br/><b>{rupiah(repairFee)}</b></span>
             <span>+</span>
             <span className="px-1.5 py-0.5 bg-white border border-[#e6e4dd] rounded">Tenaga<br/><b>{rupiah(tenaga)}</b></span>
             <span>+</span>
@@ -194,8 +174,8 @@ export default function UnitFormFields({ form, onChange }) {
             <span>=</span>
             <span className="px-2 py-1 bg-[#0e3b3a] text-white rounded font-semibold">{rupiah(hargaSetelah)}</span>
           </div>
-          <div className="text-[11px] mt-1">Cost Unit <span className="font-mono">= Tenaga + Komisi + Lain</span> (simplified) → {rupiah(tenaga+komisi+lain)}</div>
-          <div className="text-[11px]">Recommended Minimum = <b>Harga Setelah Perbaikan</b> = {rupiah(preview)}</div>
+          <div className="text-[11px]">Detail breakdown — every additional cost is inputted explicitly, no hidden Cost Unit.</div>
+          <div className="text-[11px]">Recommended Minimum = <b>Harga Setelah Perbaikan / Cost Basis</b> = {rupiah(preview)}</div>
         </div>
       </div>
 

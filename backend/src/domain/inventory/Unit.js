@@ -4,6 +4,8 @@ import { normalizePlate, isValidPlate } from "./Plate.js";
 export function createUnit(data) {
   if (!data.name?.trim()) throw new Error("Nama kendaraan wajib");
   if (!isValidPlate(data.plate)) throw new Error("NOPOL tidak valid");
+  // Cost Unit is deprecated — migrate to repairFee if present
+  const repairFee = Number(data.repairFee ?? data.costUnit ?? data.additionalCost ?? 0);
   return {
     id: data.id ?? Date.now() + Math.floor(Math.random() * 1000),
     name: String(data.name).trim(),
@@ -11,8 +13,7 @@ export function createUnit(data) {
     year: Number(data.year) || new Date().getFullYear(),
     plate: String(data.plate).trim(),
     unitPrice: Number(data.unitPrice) || 0,
-    costUnit: Number(data.costUnit) || 0,
-    additionalCost: Number(data.additionalCost) || 0,
+    repairFee,
     additionalCost1: Number(data.additionalCost1 ?? 130000),
     additionalCost2: Number(data.additionalCost2 ?? 0),
     additionalCost3: Number(data.additionalCost3 ?? 10000),
@@ -27,13 +28,15 @@ export function createUnit(data) {
 }
 
 export function costBasis(unit) {
-  return (Number(unit.unitPrice) || 0) + (Number(unit.costUnit) || 0) + (Number(unit.additionalCost) || 0)
+  // Cost Basis = Harga Beli + Repair Fee + (Tenaga + Komisi + Lain)
+  return (Number(unit.unitPrice) || 0) + (Number(unit.repairFee ?? unit.costUnit ?? 0) || 0)
        + (Number(unit.additionalCost1) || 0) + (Number(unit.additionalCost2) || 0) + (Number(unit.additionalCost3) || 0);
 }
 
 export function hargaSetelahPerbaikan(unit) {
-  const hargaUnit = (Number(unit.unitPrice) || 0) + (Number(unit.costUnit) || 0) + (Number(unit.additionalCost) || 0);
-  return hargaUnit + (Number(unit.additionalCost1) || 0) + (Number(unit.additionalCost2) || 0) + (Number(unit.additionalCost3) || 0);
+  const hargaBeli = Number(unit.unitPrice) || 0;
+  const repairFee = Number(unit.repairFee ?? unit.costUnit ?? 0) || 0;
+  return hargaBeli + repairFee + (Number(unit.additionalCost1) || 0) + (Number(unit.additionalCost2) || 0) + (Number(unit.additionalCost3) || 0);
 }
 
 export function isAvailable(unit) {
