@@ -1,9 +1,13 @@
 import React from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import BrandBadge from "../shared/BrandBadge";
-import { costBasis, minPrice, rupiah, fmtDate } from "../../utils/pricing";
+import { useSettings } from "../../context/SettingsContext";
+import { recommendedPrice, rupiah, fmtDate } from "../../utils/pricing";
 
 export default function InventoryRow({ unit, onEdit, onDelete }) {
+  const { settings } = useSettings();
+  const targetLaba = Number(settings?.targetLaba) || 0;
+
   return (
     <tr className="group border-b border-[#e6e4dd] hover:bg-neutral-50 transition-colors">
       <td className="px-4 py-3">
@@ -13,11 +17,8 @@ export default function InventoryRow({ unit, onEdit, onDelete }) {
       <td className="px-4 py-3"><BrandBadge categoryKey={unit.category} /></td>
       <td className="px-4 py-3 text-[13px]">{unit.year}</td>
       <td className="px-4 py-3 text-[13px]">{unit.ownerName}</td>
-      <td className="px-4 py-3 text-[13px]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-        {rupiah(costBasis(unit))}
-      </td>
       <td className="px-4 py-3 text-[13px] font-medium text-[#0e3b3a]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-        {rupiah(minPrice(unit))}
+        {rupiah(recommendedPrice(unit, targetLaba))}
       </td>
       <td className="px-4 py-3 text-[13px] text-[#7c8783]">{fmtDate(unit.dateAcquired)}</td>
       <td className="px-4 py-3 text-right">

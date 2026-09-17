@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ShoppingCart, Search, X } from "lucide-react";
 import BrandBadge from "../shared/BrandBadge";
-import { minPrice, saleMath, rupiah, todayISO } from "../../utils/pricing";
+import { useSettings } from "../../context/SettingsContext";
+import { recommendedPrice, saleMath, rupiah, todayISO } from "../../utils/pricing";
 
 export default function LogSaleForm({ availableUnits, onLogSale }) {
   const [search, setSearch] = useState("");
@@ -42,10 +43,11 @@ export default function LogSaleForm({ availableUnits, onLogSale }) {
   const [notes, setNotes] = useState("");
   const [soldDate, setSoldDate] = useState(todayISO());
 
+  const { settings } = useSettings();
+  const targetLaba = Number(settings?.targetLaba) || 0;
   const unit = availableUnits.find(u => String(u.id) === String(unitId));
-  const floor = unit ? minPrice(unit) : 0;
+  const floor = unit ? recommendedPrice(unit, targetLaba) : 0;
   const price = Number(sellingPrice) || 0;
-  const belowMin = unit && sellingPrice !== "" && price < floor;
   const math = unit ? saleMath(unit, price) : null;
   const commission = paymentMethod === "credit" ? 700000 : 0;
   const canSubmit = unit && sellingPrice !== "" && buyerName.trim() && buyerAddress.trim();
@@ -163,8 +165,8 @@ export default function LogSaleForm({ availableUnits, onLogSale }) {
             className="w-full border border-[#e6e4dd] rounded-lg px-3 py-2 text-[13px] outline-none"
           />
           {unit && (
-            <div className={`text-[11.5px] mt-1 ${belowMin ? "text-amber-600" : "text-[#7c8783]"}`}>
-              {belowMin ? `⚠ Below recommended minimum of ${rupiah(floor)}` : `Recommended minimum: ${rupiah(floor)}`}
+            <div className="text-[11.5px] mt-1 text-[#7c8783]">
+              Harga Rekomendasi: {rupiah(floor)}
             </div>
           )}
         </div>

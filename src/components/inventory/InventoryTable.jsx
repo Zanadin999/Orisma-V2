@@ -11,8 +11,7 @@ export default function InventoryTable({ units, onEdit, onDelete }) {
             <th className="px-4 py-3 font-medium">Brand</th>
             <th className="px-4 py-3 font-medium">Year</th>
             <th className="px-4 py-3 font-medium">Owner</th>
-            <th className="px-4 py-3 font-medium">Modal</th>
-            <th className="px-4 py-3 font-medium">Min. jual</th>
+            <th className="px-4 py-3 font-medium">Harga Rekomendasi</th>
             <th className="px-4 py-3 font-medium">Acquired</th>
             <th className="px-4 py-3 font-medium"></th>
           </tr>
@@ -23,7 +22,7 @@ export default function InventoryTable({ units, onEdit, onDelete }) {
           ))}
           {units.length === 0 && (
             <tr>
-              <td colSpan={8} className="px-4 py-8 text-center text-[#7c8783]">
+              <td colSpan={7} className="px-4 py-8 text-center text-[#7c8783]">
                 No units match the current filter.
               </td>
             </tr>

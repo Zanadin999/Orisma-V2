@@ -66,6 +66,10 @@ export function minPrice(unit) {
   return costBasis(unit);
 }
 
+export function recommendedPrice(unit, targetLaba = 0) {
+  return costBasis(unit) + (Number(targetLaba) || 0);
+}
+
 /**
  * Sale-side math: gross profit against cost basis, then zakat on that profit.
  * Pure function — zakatRate must be passed in explicitly by the caller.

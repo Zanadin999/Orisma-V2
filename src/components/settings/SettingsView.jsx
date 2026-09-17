@@ -41,6 +41,21 @@ export default function SettingsView() {
               <input type="number" step="0.1" min="0" max="10" value={settings.zakatRate} onChange={e => update({ zakatRate: Number(e.target.value) })} className="w-full border border-[#e6e4dd] rounded-lg px-3 py-2 text-[13px] mt-1" />
               <div className="text-[11px] text-[#7c8783] mt-1">Applied as {settings.zakatRate}% × Laba Kotor. Current: {rupiah(1000000 * settings.zakatRate/100)} per Rp 1jt profit.</div>
             </div>
+            <div>
+              <label className="text-[11px] text-[#7c8783]">Target Laba (Rp)</label>
+              <input
+                type="number"
+                step="50000"
+                min="0"
+                value={settings.targetLaba ?? 0}
+                onChange={e => update({ targetLaba: Number(e.target.value) || 0 })}
+                className="w-full border border-[#e6e4dd] rounded-lg px-3 py-2 text-[13px] mt-1"
+                placeholder="e.g. 2000000"
+              />
+              <div className="text-[11px] text-[#7c8783] mt-1">
+                Ditambahkan ke Modal (Harga Beli + Biaya & Komisi) untuk menghitung Harga Rekomendasi. Saat ini: {rupiah(settings.targetLaba ?? 0)}.
+              </div>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="text-[11px] text-[#7c8783]">Repair Fee / Biaya Perbaikan (Rp)</label>

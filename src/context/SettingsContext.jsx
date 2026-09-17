@@ -10,6 +10,7 @@ const DEFAULTS = {
   tenagaDefault: 130000,
   komisiDefault: 0,
   lainDefault: 10000,
+  targetLaba: 0, // flat Rp profit target added to costBasis → Harga Rekomendasi
   language: "id", // id | en
   agingWarn: 30,
   agingCritical: 60,
