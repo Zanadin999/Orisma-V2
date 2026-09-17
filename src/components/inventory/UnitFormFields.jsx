@@ -23,6 +23,7 @@ export function emptyUnitForm() {
         category: "honda",
         year: String(new Date().getFullYear()),
         plate: "",
+        color: "",
         unitPrice: "",
         repairFee: String(s.repairFeeDefault ?? s.costUnitDefault ?? 0),
         additionalCost1: String(s.tenagaDefault ?? 130000),
@@ -41,6 +42,7 @@ export function emptyUnitForm() {
     category: "honda",
     year: String(new Date().getFullYear()),
     plate: "",
+    color: "",
     unitPrice: "",
     repairFee: "",
     additionalCost1: "130000",
@@ -60,6 +62,7 @@ export function unitToForm(u) {
     category: u.category,
     year: String(u.year),
     plate: u.plate,
+    color: String(u.color || ""),
     unitPrice: String(u.unitPrice ?? ""),
     repairFee: String(u.repairFee ?? u.costUnit ?? 0),
     additionalCost1: String(u.additionalCost1 || 0),
@@ -107,6 +110,14 @@ export default function UnitFormFields({ form, onChange }) {
         <input
           required value={form.name} onChange={e => onChange("name", e.target.value)}
           placeholder="e.g. Honda Vario 125"
+          className="w-full border border-[#e6e4dd] rounded-lg px-3 py-2 text-[13px] outline-none focus:border-teal-600"
+        />
+      </Field>
+
+      <Field label="Color / Warna">
+        <input
+          value={form.color} onChange={e => onChange("color", e.target.value)}
+          placeholder="e.g. Hitam Doff, Putih Glossy, Merah"
           className="w-full border border-[#e6e4dd] rounded-lg px-3 py-2 text-[13px] outline-none focus:border-teal-600"
         />
       </Field>

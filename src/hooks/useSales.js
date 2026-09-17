@@ -1,8 +1,10 @@
-import { useState, useMemo, useRef, useEffect } from "react";
-import { INITIAL_SALES } from "../data/salesData";
-import { minPrice, saleMath } from "../utils/pricing";
+import { useState, useMemo, useRef, useEffect } from 'react';
+import { INITIAL_SALES } from '../data/salesData';
+import { minPrice, saleMath, costBasis } from '../utils/pricing';
+import { getStoredZakatFraction } from '../context/SettingsContext';
 
-const STORAGE_KEY = "orisma_sales_v24";
+const STORAGE_KEY = 'orisma_sales_v24';
+
 function loadStoredSales() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -14,22 +16,31 @@ function loadStoredSales() {
   return null;
 }
 
-// Owns the log of completed sales, independent of inventory. It doesn't
-// touch stock itself — App.jsx calls useInventory's sellUnit first, and
-// only records a transaction here if that succeeds. This keeps "what
-// happened" (sales) separate from "what's true now" (inventory).
+// Owns the log of completed sales, independent of inventory.
+// App.jsx calls useInventory's sellUnit first, and only records a
+// transaction here if that succeeds.
 export function useSales() {
   const [transactions, setTransactions] = useState(() => loadStoredSales() || INITIAL_SALES);
-  const nextTxId = useRef(Math.max(0, ...(loadStoredSales() || INITIAL_SALES).map(t => typeof t.id === "number" ? t.id : 0)) + 1);
+  const nextTxId = useRef(
+    Math.max(0, ...(loadStoredSales() || INITIAL_SALES).map(t => (typeof t.id === 'number' ? t.id : 0))) + 1
+  );
 
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions)); } catch {}
   }, [transactions]);
 
-  // unitSnapshot comes from useInventory.sellUnit(); saleDetails is the
-  // buyer/price/date info collected on the Sales/POS form.
-  function recordSale(unitSnapshot, { sellingPrice, paymentMethod, downPayment, financingCompany, commission, buyerName, buyerAddress, notes, soldDate }) {
-    const math = saleMath(unitSnapshot, sellingPrice);
+  // unitSnapshot comes from useInventory.sellUnit()
+  // zakatRate is passed in explicitly — no hidden localStorage reads
+  function recordSale(
+    unitSnapshot,
+    { sellingPrice, paymentMethod, downPayment, financingCompany, commission, buyerName, buyerAddress, notes, soldDate },
+    zakatRate
+  ) {
+    // Resolve zakat rate: use passed value, else read from stored settings once
+    const rate = (zakatRate != null && isFinite(Number(zakatRate)))
+      ? Number(zakatRate)
+      : getStoredZakatFraction();
+    const math = saleMath(unitSnapshot, sellingPrice, rate);
     const tx = {
       id: nextTxId.current++,
       unitId: unitSnapshot.id,
@@ -38,11 +49,10 @@ export function useSales() {
       plate: unitSnapshot.plate,
       year: unitSnapshot.year,
       unitPrice: unitSnapshot.unitPrice,
-      costUnit: unitSnapshot.costUnit,
-      additionalCost: unitSnapshot.additionalCost,
+      repairFee: unitSnapshot.repairFee ?? unitSnapshot.costUnit ?? 0, // canonical field
       minPrice: minPrice(unitSnapshot),
       sellingPrice: Number(sellingPrice) || 0,
-      paymentMethod: paymentMethod || "cash",
+      paymentMethod: paymentMethod || 'cash',
       downPayment: Number(downPayment) || 0,
       financingCompany: financingCompany || null,
       commission: Number(commission) || 0,
@@ -50,15 +60,18 @@ export function useSales() {
       buyerAddress,
       notes,
       soldDate,
-      saleType: "regular",
+      saleType: 'regular',
       zakatPaid: false,
       ...math,
     };
     setTransactions(prev => [tx, ...prev]);
   }
 
-  // Trade-in sale: no zakat applied
+  // Trade-in sale: zakat = 0 (no profit zakat on trade-ins)
   function recordTradeInSale({ soldUnit, acquiredUnit, tradeInValue, ownerName, ownerAddress, soldDate }) {
+    // Use saleMath with zakatRate=0 — no zakat on trade-ins
+    // Use costBasis for accurate cost calculation — no inline math
+    const math = saleMath(soldUnit, tradeInValue, 0);
     const tx = {
       id: nextTxId.current++,
       unitId: soldUnit.id,
@@ -67,25 +80,21 @@ export function useSales() {
       plate: soldUnit.plate,
       year: soldUnit.year,
       unitPrice: soldUnit.unitPrice,
-      costUnit: soldUnit.costUnit,
-      additionalCost: soldUnit.additionalCost,
+      repairFee: soldUnit.repairFee ?? soldUnit.costUnit ?? 0, // canonical field
       minPrice: minPrice(soldUnit),
       sellingPrice: tradeInValue,
-      paymentMethod: "tradein",
+      paymentMethod: 'tradein',
       downPayment: 0,
       financingCompany: null,
       commission: 0,
       buyerName: ownerName,
       buyerAddress: ownerAddress,
       notes: `Tukar Tambah - ${acquiredUnit.name} (${acquiredUnit.plate})`,
-      soldDate: soldDate,
-      saleType: "tradein",
+      soldDate,
+      saleType: 'tradein',
       zakatPaid: true,
-      cost: (soldUnit.unitPrice || 0) + (soldUnit.costUnit || 0) + (soldUnit.additionalCost || 0),
-      grossProfit: tradeInValue - ((soldUnit.unitPrice || 0) + (soldUnit.costUnit || 0) + (soldUnit.additionalCost || 0)),
       zakat: 0, // No zakat on trade-ins
-      netIncome: tradeInValue - ((soldUnit.unitPrice || 0) + (soldUnit.costUnit || 0) + (soldUnit.additionalCost || 0)),
-      tradeInValue,
+      ...math,
     };
     setTransactions(prev => [tx, ...prev]);
   }
@@ -94,14 +103,14 @@ export function useSales() {
     () => transactions.reduce((sum, t) => sum + t.sellingPrice, 0),
     [transactions]
   );
+
   const totalNetIncome = useMemo(
     () => transactions.reduce((sum, t) => sum + t.netIncome + (t.commission || 0), 0),
     [transactions]
   );
+
   const lastSale = transactions[0] || null;
 
-  // Grouped by raw key/name here; components resolve brand labels via
-  // CategoriesContext when they render these (same split as CategoryBadge).
   const topBrands = useMemo(() => {
     const byKey = {};
     transactions.forEach(t => {
@@ -124,8 +133,7 @@ export function useSales() {
 
   function importTransactions(imported) {
     if (!imported || imported.length === 0) return;
-    // Deduplicate sales by NOPOL+soldDate+sellingPrice
-    const key = (t) => `${String(t.plate||"").toUpperCase().replace(/\s+/g,"")}|${t.soldDate}|${t.sellingPrice}`;
+    const key = t => `${String(t.plate || '').toUpperCase().replace(/\s+/g, '')}|${t.soldDate}|${t.sellingPrice}`;
     const existingKeys = new Set(transactions.map(key));
     const seen = new Set();
     const deduped = [];
@@ -134,25 +142,23 @@ export function useSales() {
       const k = key(t);
       if (existingKeys.has(k) || seen.has(k)) { dupCount++; continue; }
       seen.add(k);
-      // ensure zakatPaid defaults to false for imported regular sales, true for tradein
-      if (t.zakatPaid === undefined) t.zakatPaid = t.saleType === "tradein" || t.paymentMethod === "tradein" ? true : false;
+      if (t.zakatPaid === undefined) {
+        t.zakatPaid = t.saleType === 'tradein' || t.paymentMethod === 'tradein';
+      }
       deduped.push(t);
     }
     if (deduped.length === 0) return;
-    const withIds = deduped.map(tx => ({
-      ...tx,
-      id: nextTxId.current++,
-    }));
+    const withIds = deduped.map(tx => ({ ...tx, id: nextTxId.current++ }));
     setTransactions(prev => [...withIds, ...prev]);
   }
 
   function toggleZakatPaid(id) {
-    setTransactions(prev => prev.map(t => t.id === id ? { ...t, zakatPaid: !t.zakatPaid } : t));
+    setTransactions(prev => prev.map(t => (t.id === id ? { ...t, zakatPaid: !t.zakatPaid } : t)));
   }
 
   function markAllZakatPaid(ids) {
     const idSet = new Set(ids);
-    setTransactions(prev => prev.map(t => idSet.has(t.id) ? { ...t, zakatPaid: true } : t));
+    setTransactions(prev => prev.map(t => (idSet.has(t.id) ? { ...t, zakatPaid: true } : t)));
   }
 
   return {

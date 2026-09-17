@@ -130,8 +130,8 @@ export default function LogSaleForm({ availableUnits, onLogSale }) {
                       className={`w-full text-left px-3 py-2.5 hover:bg-[#f6f5f1] flex items-center justify-between gap-2 ${String(u.id) === String(unitId) ? "bg-[#f6f5f1]" : ""}`}
                     >
                       <div className="min-w-0">
-                        <div className="text-[13px] font-medium truncate">{u.name} — {u.plate}</div>
-                        <div className="text-[11px] text-[#7c8783]">{u.year} • {u.category}</div>
+                        <div className="text-[13px] font-medium truncate">{u.name} — {u.plate} {u.color && <span className="ml-1 text-[11px] font-semibold px-1.5 py-0.5 bg-amber-50 text-amber-800 rounded-full border border-amber-200">{u.color}</span>}</div>
+                        <div className="text-[11px] text-[#7c8783]">{u.year} • {u.color || "—"} • {u.category}</div>
                       </div>
                       {String(u.id) === String(unitId) && <span className="text-[11px] text-teal-700 font-semibold">✓ Selected</span>}
                     </button>
@@ -146,9 +146,11 @@ export default function LogSaleForm({ availableUnits, onLogSale }) {
         </div>
 
         {unit && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <BrandBadge categoryKey={unit.category} />
-            <span className="text-[12px] text-[#7c8783]">{unit.year} · Owner: {unit.ownerName}</span>
+            <span className="text-[12px] text-[#7c8783]">{unit.year}</span>
+            {unit.color && <span className="text-[12px] font-semibold px-2 py-0.5 bg-amber-50 text-amber-800 rounded-full border border-amber-200">{unit.color}</span>}
+            <span className="text-[12px] text-[#7c8783]">· Owner: {unit.ownerName}</span>
           </div>
         )}
 

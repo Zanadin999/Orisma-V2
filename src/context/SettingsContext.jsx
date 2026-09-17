@@ -15,54 +15,7 @@ const DEFAULTS = {
   agingCritical: 60,
 };
 
-const TRANSLATIONS = {
-  id: {
-    dashboard: "Dasbor",
-    inventory: "Inventaris",
-    sales: "Penjualan / POS",
-    acquisition: "Akuisisi Unit",
-    reports: "Laporan",
-    settings: "Pengaturan",
-    overview: "Ringkasan",
-    setup: "Pengaturan",
-    shopNameLabel: "Nama Toko",
-    zakatRateLabel: "Tarif Zakat (%)",
-    tenagaLabel: "Default Tenaga (Rp)",
-    komisiLabel: "Default Komisi (Rp)",
-    lainLabel: "Default Lain-lain (Rp)",
-    languageLabel: "Bahasa",
-    agingWarnLabel: "Ambang Peringatan (hari)",
-    agingCriticalLabel: "Ambang Kritis (hari)",
-    save: "Simpan",
-    businessRules: "Aturan Bisnis",
-    display: "Tampilan & Lokalisasi",
-    dashboardUX: "Dasbor & Laporan",
-    dataSafety: "Data & Keamanan",
-  },
-  en: {
-    dashboard: "Dashboard",
-    inventory: "Inventory",
-    sales: "Sales / POS",
-    acquisition: "Unit Acquisition",
-    reports: "Reports",
-    settings: "Settings",
-    overview: "Overview",
-    setup: "Setup",
-    shopNameLabel: "Shop Name",
-    zakatRateLabel: "Zakat Rate (%)",
-    tenagaLabel: "Default Labor (Rp)",
-    komisiLabel: "Default Commission (Rp)",
-    lainLabel: "Default Others (Rp)",
-    languageLabel: "Language",
-    agingWarnLabel: "Warning Threshold (days)",
-    agingCriticalLabel: "Critical Threshold (days)",
-    save: "Save",
-    businessRules: "Business Rules",
-    display: "Display & Localization",
-    dashboardUX: "Dashboard & Reports",
-    dataSafety: "Data & Safety",
-  },
-};
+import { TRANSLATIONS } from '../utils/translations.js';
 
 function loadSettings() {
   try {
