@@ -95,13 +95,23 @@ export default function ZakatReport({ transactions, onTogglePaid, onMarkAllPaid 
               </thead>
               <tbody>
                 {zakatData.map(z => (
-                  <tr key={z.id} className={`border-b border-[#e6e4dd] ${z.zakatPaid ? "bg-emerald-50/50 opacity-70" : ""}`}>
+                  <tr key={z.id} className={`border-b border-[#e6e4dd] transition-colors ${z.zakatPaid ? "bg-emerald-50/60 text-[#16211f]" : "hover:bg-[#fcfbf9]"}`}>
                     <td className="py-2.5 pr-3">
-                      <input type="checkbox" checked={!!z.zakatPaid} onChange={() => onTogglePaid && onTogglePaid(z.id)} className="rounded border-[#e6e4dd]" title={z.zakatPaid ? "Mark unpaid" : "Mark paid"} />
+                      <input
+                        type="checkbox"
+                        checked={!!z.zakatPaid}
+                        onChange={() => onTogglePaid && onTogglePaid(z.id)}
+                        className="w-4 h-4 rounded border-[#e6e4dd] text-teal-600 focus:ring-teal-500 cursor-pointer"
+                        title={z.zakatPaid ? "Mark unpaid" : "Mark paid"}
+                      />
                     </td>
                     <td className="py-2.5 pr-3 text-[#7c8783]">{fmtDate(z.soldDate)}</td>
-                    <td className="py-2.5 pr-3">{z.name} {z.saleType === "tradein" && <span className="text-[10px] text-amber-600 ml-1">(Tukar Tambah)</span>}</td>
-                    <td className="py-2.5 pr-3 text-[#7c8783]">{z.plate}</td>
+                    <td className="py-2.5 pr-3 font-medium">
+                      {z.name}
+                      {z.saleType === "tradein" && <span className="text-[10px] text-amber-600 ml-1">(Tukar Tambah)</span>}
+                      {z.zakatPaid && <span className="ml-2 inline-block px-1.5 py-0.5 text-[10px] font-semibold bg-emerald-100 text-emerald-800 rounded">Lunas</span>}
+                    </td>
+                    <td className="py-2.5 pr-3 text-[#7c8783] font-mono text-[11.5px]">{z.plate}</td>
                     <td className="py-2.5 pr-3 text-right" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{rupiah(z.grossProfit)}</td>
                     <td className="py-2.5 text-right font-medium text-[#0e3b3a]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{rupiah(z.zakatAmount)}</td>
                   </tr>
