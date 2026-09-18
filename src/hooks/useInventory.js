@@ -154,6 +154,7 @@ export function useInventory() {
       category: acquiredUnit.category || UNCATEGORIZED.key,
       year: Number(acquiredUnit.year) || new Date().getFullYear(),
       plate: acquiredUnit.plate.trim(),
+      color: String(acquiredUnit.color || "").trim(),
       unitPrice: tradeInValue,
       repairFee: 0,
       additionalCost1: 0,

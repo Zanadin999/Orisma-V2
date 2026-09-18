@@ -19,6 +19,7 @@ export function emptyTradeInForm() {
     category: "honda",
     year: String(new Date().getFullYear()),
     plate: "",
+    color: "",
     tradeInValuation: "",
     ownerName: "",
     ownerAddress: "",
@@ -65,6 +66,14 @@ export default function TradeInFormFields({ form, onChange }) {
         <input
           required value={form.name} onChange={e => onChange("name", e.target.value)}
           placeholder="e.g. Honda Vario 125"
+          className="w-full border border-[#e6e4dd] rounded-lg px-3 py-2 text-[13px] outline-none focus:border-teal-600"
+        />
+      </Field>
+
+      <Field label="Color / Warna">
+        <input
+          value={form.color} onChange={e => onChange("color", e.target.value)}
+          placeholder="e.g. Hitam Doff, Putih Glossy, Merah"
           className="w-full border border-[#e6e4dd] rounded-lg px-3 py-2 text-[13px] outline-none focus:border-teal-600"
         />
       </Field>
