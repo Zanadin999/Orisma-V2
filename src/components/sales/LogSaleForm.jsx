@@ -150,8 +150,8 @@ export default function LogSaleForm({ availableUnits, onLogSale }) {
         {unit && (
           <div className="flex items-center gap-2 flex-wrap">
             <BrandBadge categoryKey={unit.category} />
-            <span className="text-[12px] text-[#7c8783]">{unit.year}</span>
-            {unit.color && <span className="text-[12px] font-semibold px-2 py-0.5 bg-amber-50 text-amber-800 rounded-full border border-amber-200">{unit.color}</span>}
+            <span className="text-[11px] font-semibold px-2 py-0.5 bg-teal-50 text-teal-800 rounded-full border border-teal-200">{unit.year}</span>
+            {unit.color && <span className="text-[11px] font-semibold px-2 py-0.5 bg-amber-50 text-amber-800 rounded-full border border-amber-200">{unit.color}</span>}
             <span className="text-[12px] text-[#7c8783]">· Owner: {unit.ownerName}</span>
           </div>
         )}

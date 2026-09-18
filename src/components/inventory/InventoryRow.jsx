@@ -16,6 +16,12 @@ export default function InventoryRow({ unit, onEdit, onDelete }) {
       </td>
       <td className="px-4 py-3"><BrandBadge categoryKey={unit.category} /></td>
       <td className="px-4 py-3 text-[13px]">{unit.year}</td>
+      <td className="px-4 py-3">
+        {unit.color
+          ? <span className="text-[11px] font-semibold px-2 py-0.5 bg-amber-50 text-amber-800 rounded-full border border-amber-200">{unit.color}</span>
+          : <span className="text-[12px] text-[#b5b2a8]">—</span>
+        }
+      </td>
       <td className="px-4 py-3 text-[13px]">{unit.ownerName}</td>
       <td className="px-4 py-3 text-[13px] font-medium text-[#0e3b3a]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
         {rupiah(recommendedPrice(unit, targetLaba))}
