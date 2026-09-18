@@ -13,7 +13,8 @@ export default function LogSaleForm({ availableUnits, onLogSale }) {
   const filteredUnits = availableUnits.filter(u => {
     const q = search.trim().toLowerCase();
     if (!q) return true;
-    return u.name.toLowerCase().includes(q) || u.plate.toLowerCase().includes(q);
+    const combined = `${u.name} — ${u.plate}`.toLowerCase();
+    return u.name.toLowerCase().includes(q) || u.plate.toLowerCase().includes(q) || combined.includes(q);
   });
 
   // sync selection when filter changes
