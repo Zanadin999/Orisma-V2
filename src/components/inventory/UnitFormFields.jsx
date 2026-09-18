@@ -83,12 +83,7 @@ export default function UnitFormFields({ form, onChange }) {
   const { categories: brands } = useCategoriesContext();
   const { settings } = useSettings();
   const targetLaba = Number(settings?.targetLaba) || 0;
-  const hargaBeli = Number(form.unitPrice) || 0;
-  const repairFee = Number(form.repairFee ?? form.costUnit) || 0;
-  const tenaga = Number(form.additionalCost1) || 0;
-  const komisi = Number(form.additionalCost2) || 0;
-  const lain = Number(form.additionalCost3) || 0;
-  const hargaSetelah = hargaBeli + repairFee + tenaga + komisi + lain;
+
   const recPrice = recommendedPrice({
     unitPrice: form.unitPrice,
     repairFee: form.repairFee ?? form.costUnit,
@@ -171,29 +166,6 @@ export default function UnitFormFields({ form, onChange }) {
         <CurrencyInput value={form.additionalCost3} onChange={v => onChange("additionalCost3", v)} placeholder="Rp 0" />
       </Field>
 
-      {/* Formula: Cost Basis & Harga Rekomendasi */}
-      <div className="rounded-xl border border-[#e6e4dd] bg-[#fafaf8] p-3 space-y-2">
-        <div className="text-[11px] font-semibold text-[#0e3b3a]">Formula — Harga Rekomendasi = Harga Beli + Repair Fee + Tenaga + Komisi + Lain + Target Laba</div>
-        <div className="text-[11px] text-[#7c8783] leading-relaxed">
-          <div className="flex flex-wrap gap-x-1 gap-y-1 items-center text-[11px]">
-            <span className="px-1.5 py-0.5 bg-white border border-[#e6e4dd] rounded">Harga Beli<br/><b>{rupiah(hargaBeli)}</b></span>
-            <span>+</span>
-            <span className="px-1.5 py-0.5 bg-white border border-[#e6e4dd] rounded">Repair Fee<br/><b>{rupiah(repairFee)}</b></span>
-            <span>+</span>
-            <span className="px-1.5 py-0.5 bg-white border border-[#e6e4dd] rounded">Tenaga<br/><b>{rupiah(tenaga)}</b></span>
-            <span>+</span>
-            <span className="px-1.5 py-0.5 bg-white border border-[#e6e4dd] rounded">Komisi<br/><b>{rupiah(komisi)}</b></span>
-            <span>+</span>
-            <span className="px-1.5 py-0.5 bg-white border border-[#e6e4dd] rounded">Lain<br/><b>{rupiah(lain)}</b></span>
-            <span>+</span>
-            <span className="px-1.5 py-0.5 bg-white border border-[#e6e4dd] rounded">Target Laba<br/><b>{rupiah(targetLaba)}</b></span>
-            <span>=</span>
-            <span className="px-2 py-1 bg-[#0e3b3a] text-white rounded font-semibold">{rupiah(recPrice)}</span>
-          </div>
-          <div className="text-[11px] mt-1">Cost Basis (Modal): <b>{rupiah(hargaSetelah)}</b> • Target Laba: <b>{rupiah(targetLaba)}</b></div>
-          <div className="text-[11px]">Recommended Price = <b>{rupiah(recPrice)}</b></div>
-        </div>
-      </div>
 
       <div className="text-[12.5px] font-semibold text-[#0e3b3a] pt-1 pb-0.5">
         Unit Acquirement Detail
