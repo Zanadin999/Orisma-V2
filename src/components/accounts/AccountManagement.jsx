@@ -8,12 +8,20 @@ function RoleBadge({ role }) {
 }
 
 export default function AccountManagement() {
-  const { accounts, currentUser, addAccount, updateAccount, deleteAccount, switchUser } = useAuth();
+  const { accounts = [], currentUser, addAccount, updateAccount, deleteAccount, switchUser } = useAuth();
   const { settings } = useSettings();
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ name: "", email: "", role: "staff", password: "" });
   const [error, setError] = useState("");
+
+  if (!currentUser) {
+    return (
+      <div className="p-8 text-center text-[#7c8783]">
+        Silakan login terlebih dahulu untuk mengelola akun.
+      </div>
+    );
+  }
 
   function openAdd() { setForm({ name: "", email: "", role: "staff", password: "" }); setError(""); setShowAdd(true); }
   function openEdit(acc) { setEditing(acc); setForm({ name: acc.name, email: acc.email, role: acc.role, password: acc.password }); setError(""); }
@@ -32,13 +40,15 @@ export default function AccountManagement() {
     <>
       <div className="flex items-baseline justify-between mb-1">
         <h1 className="text-2xl font-semibold" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Account Management</h1>
-        <div className="text-sm text-[#7c8783]">{settings.shopName} • {accounts.length} akun</div>
+        <div className="text-sm text-[#7c8783]">{settings?.shopName || "Showroom Orisma"} • {accounts.length} akun</div>
       </div>
       <p className="text-[13.5px] text-[#7c8783] mb-5">Kelola akun staff — role menentukan akses menu. Data disimpan lokal (localStorage).</p>
 
       <div className="bg-white border border-[#e6e4dd] rounded-xl p-5 mb-4">
         <div className="flex items-center justify-between mb-4">
-          <div className="text-[13px] font-semibold">Akun Aktif: {currentUser.name} <RoleBadge role={currentUser.role} /></div>
+          <div className="text-[13px] font-semibold flex items-center gap-2">
+            Akun Aktif: {currentUser.name} <RoleBadge role={currentUser.role} />
+          </div>
           <div className="flex items-center gap-2">
             <select value={currentUser.id} onChange={e => switchUser(Number(e.target.value))} className="border border-[#e6e4dd] rounded-lg px-2 py-1.5 text-[12px] bg-white">
               {accounts.map(a => <option key={a.id} value={a.id}>{a.name} — {a.email}</option>)}
