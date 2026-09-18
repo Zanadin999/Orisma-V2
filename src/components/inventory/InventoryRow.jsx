@@ -12,16 +12,15 @@ export default function InventoryRow({ unit, onEdit, onDelete }) {
     <tr className="group border-b border-[#e6e4dd] hover:bg-neutral-50 transition-colors">
       <td className="px-4 py-3">
         <div className="font-medium text-[13px]">{unit.name}</div>
-        <div className="text-[11.5px] text-[#7c8783]">{unit.plate}</div>
+        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+          <span className="text-[11.5px] text-[#7c8783]">{unit.plate}</span>
+          {unit.color && (
+            <span className="text-[10px] font-semibold px-1.5 py-0.5 bg-amber-50 text-amber-800 rounded-full border border-amber-200 whitespace-nowrap">{unit.color}</span>
+          )}
+        </div>
       </td>
       <td className="px-4 py-3"><BrandBadge categoryKey={unit.category} /></td>
       <td className="px-4 py-3 text-[13px]">{unit.year}</td>
-      <td className="px-4 py-3">
-        {unit.color
-          ? <span className="text-[11px] font-semibold px-2 py-0.5 bg-amber-50 text-amber-800 rounded-full border border-amber-200">{unit.color}</span>
-          : <span className="text-[12px] text-[#b5b2a8]">—</span>
-        }
-      </td>
       <td className="px-4 py-3 text-[13px]">{unit.ownerName}</td>
       <td className="px-4 py-3 text-[13px] font-medium text-[#0e3b3a]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
         {rupiah(recommendedPrice(unit, targetLaba))}
