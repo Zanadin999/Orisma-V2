@@ -73,6 +73,7 @@ function AppShell() {
             totalAssetValue={inventory.totalAssetValue}
             transactions={sales.transactions}
             totalNetIncome={sales.totalNetIncome}
+            onSelectTab={handleSelectTab}
           />
         )}
 
