@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
-import { rupiah, rupiahCompact, fmtShortDate, fmtDate } from "../../utils/pricing";
-import { BarChart3, LineChart, AreaChart, Layers, Filter, Calendar, X, Info } from "lucide-react";
+import { rupiah, rupiahCompact, fmtShortDate } from "../../utils/pricing";
+import { BarChart3, LineChart, AreaChart, Layers, Filter, Calendar, X } from "lucide-react";
 import { useCategoriesContext } from "../../context/CategoriesContext";
 
 export default function RevenueChart({ transactions }) {
@@ -9,6 +9,7 @@ export default function RevenueChart({ transactions }) {
   const [aggregation, setAggregation] = useState("sale"); // sale | daily | weekly | monthly
   const [selectedBrand, setSelectedBrand] = useState("all");
   const [limit, setLimit] = useState(10);
+  const [hoveredIndex, setHoveredIndex] = useState(null);
   const [inspectorData, setInspectorData] = useState(null);
 
   // Filter transactions by brand
@@ -89,6 +90,7 @@ export default function RevenueChart({ transactions }) {
 
   const maxRev = Math.max(...aggregatedData.map(d => d.revenue), 1);
 
+  // Net Income scaling (including negative profit)
   const { minNet, maxNet, netRange } = useMemo(() => {
     const nets = aggregatedData.map(d => d.netIncome);
     const minN = Math.min(0, ...nets);
@@ -97,7 +99,12 @@ export default function RevenueChart({ transactions }) {
     return { minNet: minN, maxNet: maxN, netRange: range };
   }, [aggregatedData]);
 
-  // Available brand list
+  // Zero-line baseline percentage in SVG coordinates (0-100)
+  const zeroYPct = useMemo(() => {
+    return 80 - ((0 - minNet) / netRange) * 60;
+  }, [minNet, netRange]);
+
+  // Brand dropdown list
   const availableBrands = useMemo(() => {
     const fromTx = new Set(transactions.map(t => (t.category || "").toLowerCase()).filter(Boolean));
     const list = [{ key: "all", label: "Semua Brand" }];
@@ -112,14 +119,14 @@ export default function RevenueChart({ transactions }) {
   }, [transactions, brandCategories]);
 
   return (
-    <div className="bg-white border border-[#e6e4dd] rounded-xl p-5 relative">
+    <div className="bg-white border border-[#e6e4dd] rounded-xl p-5 relative select-none">
       {/* Top Header Controls */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
         <div>
           <div className="flex items-center gap-2">
             <h3 className="text-[14px] font-semibold">Revenue & Profit Performance</h3>
             <span
-              className={`px-2 py-0.5 text-[10.5px] font-semibold border rounded-full ${
+              className={`px-2.5 py-0.5 text-[10.5px] font-semibold border rounded-full ${
                 Number(summaryMetrics.marginPct) < 0
                   ? "bg-red-50 text-red-700 border-red-200"
                   : "bg-teal-50 text-teal-700 border-teal-200"
@@ -129,7 +136,7 @@ export default function RevenueChart({ transactions }) {
             </span>
           </div>
           <div className="text-[11.5px] text-[#7c8783] flex items-center gap-2 mt-0.5 flex-wrap">
-            <span>Rata-rata: <strong className="text-[#0e3b3a]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{rupiah(summaryMetrics.avgRev)}</strong></span>
+            <span>Rata-rata Revenue: <strong className="text-[#0e3b3a]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{rupiah(summaryMetrics.avgRev)}</strong></span>
             <span>•</span>
             <span>{aggregatedData.length} data point ({aggregation})</span>
           </div>
@@ -219,17 +226,17 @@ export default function RevenueChart({ transactions }) {
         </div>
       </div>
 
-      {/* Chart Canvas */}
+      {/* Chart Canvas Area */}
       {aggregatedData.length === 0 ? (
         <div className="text-[13px] text-[#7c8783] py-12 text-center border border-dashed border-[#e6e4dd] rounded-lg">
           Tidak ada data transaksi untuk filter yang dipilih.
         </div>
       ) : (
-        <div className="relative h-64 pt-4 pb-2">
+        <div className="relative pt-2 pb-1">
           {/* Legend */}
-          <div className="flex items-center justify-end gap-4 text-[11px] text-[#7c8783] mb-3 px-1">
+          <div className="flex items-center justify-end gap-5 text-[11px] text-[#7c8783] mb-3 px-1">
             <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-sm bg-teal-500 inline-block" />
+              <span className="w-3 h-3 rounded-sm bg-teal-400 inline-block" />
               <span>Revenue (Omzet)</span>
             </div>
             {(chartType === "dual" || chartType === "line") && (
@@ -238,223 +245,216 @@ export default function RevenueChart({ transactions }) {
                 <span>Net Income (Profit Bersih)</span>
               </div>
             )}
+            {minNet < 0 && (
+              <div className="flex items-center gap-1">
+                <span className="w-3 border-b border-dashed border-red-400 inline-block" />
+                <span className="text-red-600 font-medium">Garit Zero Baseline</span>
+              </div>
+            )}
           </div>
 
-          {/* DUAL METRIC OVERLAY CHART */}
-          {chartType === "dual" && (
-            <div className="relative h-48">
-              {/* Bars for Revenue */}
-              <div className="flex items-end gap-2 h-full px-4">
-                {aggregatedData.map((d) => {
-                  const heightPct = Math.max(8, Math.round((d.revenue / maxRev) * 100));
-                  return (
-                    <div
-                      key={d.id}
-                      onClick={() => setInspectorData(d)}
-                      className="flex-1 flex flex-col items-center gap-1 group cursor-pointer h-full justify-end"
-                      title={`Klik untuk detail ${d.label} — Omzet: ${rupiah(d.revenue)}`}
-                    >
-                      <span
-                        className="text-[10px] font-semibold text-[#0e3b3a] truncate max-w-full group-hover:scale-105 transition-transform"
-                        style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-                      >
-                        {rupiahCompact(d.revenue)}
-                      </span>
-                      <div
-                        className="w-full rounded-t-md bg-teal-400/80 group-hover:bg-teal-500 transition-all shadow-xs"
-                        style={{ height: `${heightPct}%` }}
-                      />
-                      <div className="text-[10.5px] text-[#7c8783] font-medium truncate">{d.label}</div>
-                    </div>
-                  );
-                })}
-              </div>
+          {/* MAIN CHART CONTAINER */}
+          <div className="relative h-64 border-b border-[#e6e4dd] pb-6">
+            {/* Revenue Bars */}
+            <div className="flex items-end gap-2 h-full px-4 relative z-0">
+              {aggregatedData.map((d, idx) => {
+                const heightPct = Math.max(6, Math.round((d.revenue / maxRev) * 75));
+                const isHovered = hoveredIndex === idx;
 
-              {/* Net Income SVG Line Layer */}
-              <div className="absolute inset-0 pointer-events-none px-4">
+                return (
+                  <div
+                    key={d.id}
+                    onMouseEnter={() => setHoveredIndex(idx)}
+                    onMouseLeave={() => setHoveredIndex(null)}
+                    onClick={() => setInspectorData(d)}
+                    className="flex-1 flex flex-col items-center justify-end h-full cursor-pointer group relative"
+                  >
+                    {/* Bar Revenue Value Label (Clean HTML) */}
+                    <span
+                      className={`text-[10px] font-semibold text-[#0e3b3a] mb-1 truncate max-w-full transition-all ${
+                        isHovered ? "scale-110 font-bold" : ""
+                      }`}
+                      style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+                    >
+                      {rupiahCompact(d.revenue)}
+                    </span>
+
+                    {/* Bar Column */}
+                    <div
+                      className={`w-full rounded-t-md transition-all shadow-xs ${
+                        isHovered ? "bg-teal-500 shadow-md" : "bg-teal-400/80 group-hover:bg-teal-500"
+                      }`}
+                      style={{ height: `${heightPct}%` }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* DUAL MODE: Net Income Line & Perfect Round Node Dots */}
+            {(chartType === "dual" || chartType === "line" || chartType === "area") && (
+              <div className="absolute inset-0 pointer-events-none px-4 z-10">
+                {/* SVG for Line Path & Baseline */}
                 <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="none">
+                  {/* Dashed Zero Line ($y=0$) if negative net income exists */}
+                  {minNet < 0 && (
+                    <line
+                      x1="0"
+                      y1={zeroYPct}
+                      x2="100"
+                      y2={zeroYPct}
+                      stroke="#ef4444"
+                      strokeWidth="1.2"
+                      strokeDasharray="3 3"
+                      opacity="0.6"
+                    />
+                  )}
+
+                  {/* Net Income Line Path */}
                   {(() => {
                     const points = aggregatedData.map((d, i) => ({
                       x: aggregatedData.length === 1 ? 50 : (i / (aggregatedData.length - 1)) * 90 + 5,
-                      y: 78 - ((d.netIncome - minNet) / netRange) * 55,
-                      val: d.netIncome,
+                      y: chartType === "dual"
+                        ? 78 - ((d.netIncome - minNet) / netRange) * 55
+                        : 78 - (d.revenue / maxRev) * 55,
                     }));
                     const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+
                     return (
                       <>
-                        <path d={pathD} fill="none" stroke="#047857" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                        {points.map((p, i) => (
-                          <circle key={i} cx={p.x} cy={p.y} r="2.8" fill="#047857" stroke="#ffffff" strokeWidth="1.5" />
-                        ))}
+                        {chartType === "area" && (
+                          <path
+                            d={`${pathD} L ${points[points.length - 1].x} 95 L ${points[0].x} 95 Z`}
+                            fill="#0d9488"
+                            opacity="0.18"
+                          />
+                        )}
+                        <path
+                          d={pathD}
+                          fill="none"
+                          stroke={chartType === "dual" ? "#047857" : "#0d9488"}
+                          strokeWidth="2.5"
+                          vectorEffect="non-scaling-stroke"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
                       </>
                     );
                   })()}
                 </svg>
 
-                {/* Clean HTML Text Overlay for Net Income Labels */}
-                {aggregatedData.map((d, i) => {
-                  const xPct = aggregatedData.length === 1 ? 50 : (i / (aggregatedData.length - 1)) * 90 + 5;
-                  const yPct = 78 - ((d.netIncome - minNet) / netRange) * 55;
+                {/* HTML Perfect 100% Round Circle Dots (No SVG Oval Distortion) */}
+                {aggregatedData.map((d, idx) => {
+                  const xPct = aggregatedData.length === 1 ? 50 : (idx / (aggregatedData.length - 1)) * 90 + 5;
+                  const yPct = chartType === "dual"
+                    ? 78 - ((d.netIncome - minNet) / netRange) * 55
+                    : 78 - (d.revenue / maxRev) * 55;
                   const isNegative = d.netIncome < 0;
+                  const isHovered = hoveredIndex === idx;
 
                   return (
                     <div
-                      key={d.id}
-                      className="absolute -translate-x-1/2 pointer-events-auto cursor-pointer flex flex-col items-center"
+                      key={`dot-${d.id}`}
+                      className="absolute -translate-x-1/2 -translate-y-1/2 pointer-events-auto cursor-pointer"
                       style={{ left: `${xPct}%`, top: `${yPct}%` }}
+                      onMouseEnter={() => setHoveredIndex(idx)}
+                      onMouseLeave={() => setHoveredIndex(null)}
                       onClick={() => setInspectorData(d)}
-                      title={`Net Profit: ${rupiah(d.netIncome)}`}
                     >
-                      <span
-                        className={`text-[9px] font-semibold px-1.5 py-0.5 rounded shadow-xs whitespace-nowrap -translate-y-full -mt-1 font-mono transition-transform hover:scale-105 ${
-                          isNegative ? "bg-red-700 text-white" : "bg-[#047857] text-white"
-                        }`}
-                      >
-                        {rupiahCompact(d.netIncome)}
-                      </span>
+                      <div
+                        className={`w-3.5 h-3.5 rounded-full border-2 border-white transition-all ${
+                          isNegative ? "bg-red-600 ring-2 ring-red-200" : "bg-[#047857]"
+                        } ${isHovered ? "scale-130 shadow-md" : ""}`}
+                      />
                     </div>
                   );
                 })}
               </div>
-            </div>
-          )}
+            )}
 
-          {/* STANDARD BAR CHART */}
-          {chartType === "bar" && (
-            <div className="flex items-end gap-2 h-48 px-4">
-              {aggregatedData.map((d) => {
-                const heightPct = Math.max(8, Math.round((d.revenue / maxRev) * 100));
-                return (
-                  <div
-                    key={d.id}
-                    onClick={() => setInspectorData(d)}
-                    className="flex-1 flex flex-col items-center gap-1 group cursor-pointer h-full justify-end"
-                    title={`Klik untuk detail ${d.label} — Omzet: ${rupiah(d.revenue)}`}
-                  >
-                    <span className="text-[10px] font-semibold text-[#0e3b3a] truncate max-w-full" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                      {rupiahCompact(d.revenue)}
-                    </span>
-                    <div
-                      className="w-full rounded-t-md bg-teal-600 group-hover:bg-teal-700 transition-all shadow-xs"
-                      style={{ height: `${heightPct}%` }}
-                    />
-                    <div className="text-[10.5px] text-[#7c8783] font-medium truncate">{d.label}</div>
+            {/* Hover Tooltip Card */}
+            {hoveredIndex !== null && aggregatedData[hoveredIndex] && (
+              <div
+                className="absolute z-30 pointer-events-none -translate-x-1/2 -translate-y-full -top-2 bg-[#0e3b3a] text-white rounded-lg p-2.5 shadow-xl border border-teal-700/50 text-[11.5px] min-w-[150px]"
+                style={{
+                  left: `${
+                    aggregatedData.length === 1
+                      ? 50
+                      : (hoveredIndex / (aggregatedData.length - 1)) * 90 + 5
+                  }%`,
+                }}
+              >
+                <div className="font-semibold border-b border-teal-800/80 pb-1 mb-1 flex items-center justify-between">
+                  <span>{aggregatedData[hoveredIndex].label}</span>
+                  <span className="text-[10px] text-teal-300 font-mono">
+                    {aggregatedData[hoveredIndex].count} tx
+                  </span>
+                </div>
+                <div className="space-y-0.5">
+                  <div className="flex justify-between gap-3 text-[#cfe6df]">
+                    <span>Omzet:</span>
+                    <strong className="text-white font-mono">{rupiah(aggregatedData[hoveredIndex].revenue)}</strong>
                   </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* LINE CHART */}
-          {chartType === "line" && (
-            <div className="relative h-48 pt-2 px-4">
-              <svg viewBox="0 0 100 100" className="w-full h-36" preserveAspectRatio="none">
-                {(() => {
-                  const points = aggregatedData.map((d, i) => ({
-                    x: aggregatedData.length === 1 ? 50 : (i / (aggregatedData.length - 1)) * 90 + 5,
-                    y: 80 - (d.revenue / maxRev) * 60,
-                    val: d.revenue,
-                    d,
-                  }));
-                  const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
-                  return (
-                    <>
-                      <path d={pathD} fill="none" stroke="#0d9488" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                      {points.map((p, i) => (
-                        <circle key={i} cx={p.x} cy={p.y} r="3" fill="#0e3b3a" stroke="#ffffff" strokeWidth="1.5" />
-                      ))}
-                    </>
-                  );
-                })()}
-              </svg>
-
-              {/* Clean HTML Text Overlay for Line Points */}
-              {aggregatedData.map((d, i) => {
-                const xPct = aggregatedData.length === 1 ? 50 : (i / (aggregatedData.length - 1)) * 90 + 5;
-                const yPct = 80 - (d.revenue / maxRev) * 60;
-                return (
-                  <div
-                    key={d.id}
-                    className="absolute -translate-x-1/2 pointer-events-auto cursor-pointer flex flex-col items-center"
-                    style={{ left: `${xPct}%`, top: `${yPct}%` }}
-                    onClick={() => setInspectorData(d)}
-                  >
-                    <span className="text-[9.5px] font-semibold text-[#0e3b3a] bg-white border border-[#e6e4dd] px-1.5 py-0.5 rounded shadow-xs whitespace-nowrap -translate-y-full -mt-1 font-mono">
-                      {rupiahCompact(d.revenue)}
-                    </span>
+                  <div className="flex justify-between gap-3 text-[#cfe6df]">
+                    <span>Net Profit:</span>
+                    <strong
+                      className={`font-mono ${
+                        aggregatedData[hoveredIndex].netIncome < 0 ? "text-red-300 font-bold" : "text-emerald-300 font-bold"
+                      }`}
+                    >
+                      {rupiah(aggregatedData[hoveredIndex].netIncome)}
+                    </strong>
                   </div>
-                );
-              })}
-
-              <div className="flex justify-between px-2 mt-2">
-                {aggregatedData.map(d => (
-                  <div key={d.id} className="text-[10.5px] text-[#7c8783] flex-1 text-center font-medium truncate">
-                    {d.label}
-                  </div>
-                ))}
+                </div>
+                <div className="text-[9.5px] text-teal-200/70 mt-1 text-center font-medium">
+                  Klik unit untuk detail transaksi
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
-          {/* AREA CHART */}
-          {chartType === "area" && (
-            <div className="relative h-48 pt-2 px-4">
-              <svg viewBox="0 0 100 100" className="w-full h-36" preserveAspectRatio="none">
-                {(() => {
-                  const points = aggregatedData.map((d, i) => ({
-                    x: aggregatedData.length === 1 ? 50 : (i / (aggregatedData.length - 1)) * 90 + 5,
-                    y: 80 - (d.revenue / maxRev) * 60,
-                    val: d.revenue,
-                    d,
-                  }));
-                  const pathLine = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
-                  const pathArea = `${pathLine} L ${points[points.length - 1].x} 95 L ${points[0].x} 95 Z`;
-                  return (
-                    <>
-                      <path d={pathArea} fill="#0d9488" opacity="0.2" />
-                      <path d={pathLine} fill="none" stroke="#0d9488" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                      {points.map((p, i) => (
-                        <circle key={i} cx={p.x} cy={p.y} r="3" fill="#0e3b3a" stroke="#ffffff" strokeWidth="1.5" />
-                      ))}
-                    </>
-                  );
-                })()}
-              </svg>
-
-              {/* Clean HTML Text Overlay for Area Points */}
-              {aggregatedData.map((d, i) => {
-                const xPct = aggregatedData.length === 1 ? 50 : (i / (aggregatedData.length - 1)) * 90 + 5;
-                const yPct = 80 - (d.revenue / maxRev) * 60;
-                return (
-                  <div
-                    key={d.id}
-                    className="absolute -translate-x-1/2 pointer-events-auto cursor-pointer flex flex-col items-center"
-                    style={{ left: `${xPct}%`, top: `${yPct}%` }}
-                    onClick={() => setInspectorData(d)}
-                  >
-                    <span className="text-[9.5px] font-semibold text-[#0e3b3a] bg-white border border-[#e6e4dd] px-1.5 py-0.5 rounded shadow-xs whitespace-nowrap -translate-y-full -mt-1 font-mono">
-                      {rupiahCompact(d.revenue)}
-                    </span>
-                  </div>
-                );
-              })}
-
-              <div className="flex justify-between px-2 mt-2">
-                {aggregatedData.map(d => (
-                  <div key={d.id} className="text-[10.5px] text-[#7c8783] flex-1 text-center font-medium truncate">
-                    {d.label}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* Sub-Row: Date Labels & Separated Net Profit Badges */}
+          <div className="flex justify-between px-4 pt-2 gap-1">
+            {aggregatedData.map((d, idx) => {
+              const isNegative = d.netIncome < 0;
+              return (
+                <div
+                  key={`subrow-${d.id}`}
+                  onClick={() => setInspectorData(d)}
+                  className="flex-1 text-center cursor-pointer min-w-0"
+                  title={`Klik detail ${d.label}`}
+                >
+                  <div className="text-[10.5px] font-medium text-[#7c8783] truncate">{d.label}</div>
+                  {chartType === "dual" && (
+                    <div className="mt-1 flex justify-center">
+                      <span
+                        className={`text-[9.5px] font-semibold px-1.5 py-0.5 rounded border inline-block truncate max-w-full font-mono ${
+                          isNegative
+                            ? "bg-red-50 text-red-700 border-red-200"
+                            : "bg-emerald-50 text-emerald-800 border-emerald-200"
+                        }`}
+                      >
+                        {isNegative ? "" : "+"}{rupiahCompact(d.netIncome)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
       {/* Click-to-Drilldown Transaction Inspector Popover */}
       {inspectorData && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50" onClick={() => setInspectorData(null)}>
-          <div className="bg-white rounded-xl p-5 w-full max-w-lg shadow-xl border border-[#e6e4dd]" onClick={e => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50"
+          onClick={() => setInspectorData(null)}
+        >
+          <div
+            className="bg-white rounded-xl p-5 w-full max-w-lg shadow-xl border border-[#e6e4dd]"
+            onClick={e => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between border-b border-[#e6e4dd] pb-3 mb-3">
               <div>
                 <h4 className="text-[15px] font-semibold flex items-center gap-2">
@@ -464,7 +464,10 @@ export default function RevenueChart({ transactions }) {
                   </span>
                 </h4>
                 <div className="text-[11.5px] text-[#7c8783] mt-0.5">
-                  Total Omzet: <strong className="text-[#0e3b3a]">{rupiah(inspectorData.revenue)}</strong> • Profit Bersih: <strong className={inspectorData.netIncome < 0 ? "text-red-700" : "text-emerald-700"}>{rupiah(inspectorData.netIncome)}</strong>
+                  Total Omzet: <strong className="text-[#0e3b3a]">{rupiah(inspectorData.revenue)}</strong> • Profit Bersih:{" "}
+                  <strong className={inspectorData.netIncome < 0 ? "text-red-700" : "text-emerald-700"}>
+                    {rupiah(inspectorData.netIncome)}
+                  </strong>
                 </div>
               </div>
               <button
@@ -478,7 +481,10 @@ export default function RevenueChart({ transactions }) {
 
             <div className="max-h-72 overflow-y-auto divide-y divide-[#e6e4dd] text-[12.5px]">
               {inspectorData.items.map((item, idx) => (
-                <div key={item.id || idx} className="py-2.5 flex items-center justify-between gap-3 hover:bg-[#fcfbf9] transition-colors">
+                <div
+                  key={item.id || idx}
+                  className="py-2.5 flex items-center justify-between gap-3 hover:bg-[#fcfbf9] transition-colors"
+                >
                   <div className="min-w-0 flex-1">
                     <div className="font-semibold text-[#16211f] truncate">{item.name}</div>
                     <div className="text-[11px] text-[#7c8783] flex items-center gap-2 mt-0.5">
@@ -491,7 +497,11 @@ export default function RevenueChart({ transactions }) {
                     <div className="font-semibold text-[#0e3b3a]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
                       {rupiah(item.sellingPrice)}
                     </div>
-                    <div className={`text-[10.5px] font-medium mt-0.5 ${item.netIncome < 0 ? "text-red-600" : "text-emerald-600"}`}>
+                    <div
+                      className={`text-[10.5px] font-medium mt-0.5 ${
+                        item.netIncome < 0 ? "text-red-600 font-bold" : "text-emerald-600 font-semibold"
+                      }`}
+                    >
                       {item.netIncome < 0 ? "Loss: " : "+ Net Profit: "}{rupiah(item.netIncome)}
                     </div>
                   </div>
