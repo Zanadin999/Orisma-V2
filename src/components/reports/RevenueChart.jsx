@@ -88,7 +88,14 @@ export default function RevenueChart({ transactions }) {
   }, [aggregatedData]);
 
   const maxRev = Math.max(...aggregatedData.map(d => d.revenue), 1);
-  const maxNet = Math.max(...aggregatedData.map(d => d.netIncome), 1);
+
+  const { minNet, maxNet, netRange } = useMemo(() => {
+    const nets = aggregatedData.map(d => d.netIncome);
+    const minN = Math.min(0, ...nets);
+    const maxN = Math.max(1, ...nets);
+    const range = (maxN - minN) || 1;
+    return { minNet: minN, maxNet: maxN, netRange: range };
+  }, [aggregatedData]);
 
   // Available brand list
   const availableBrands = useMemo(() => {
@@ -111,7 +118,13 @@ export default function RevenueChart({ transactions }) {
         <div>
           <div className="flex items-center gap-2">
             <h3 className="text-[14px] font-semibold">Revenue & Profit Performance</h3>
-            <span className="px-2 py-0.5 text-[10.5px] font-semibold bg-teal-50 text-teal-700 border border-teal-200 rounded-full">
+            <span
+              className={`px-2 py-0.5 text-[10.5px] font-semibold border rounded-full ${
+                Number(summaryMetrics.marginPct) < 0
+                  ? "bg-red-50 text-red-700 border-red-200"
+                  : "bg-teal-50 text-teal-700 border-teal-200"
+              }`}
+            >
               Margin: {summaryMetrics.marginPct}%
             </span>
           </div>
@@ -168,7 +181,7 @@ export default function RevenueChart({ transactions }) {
           <div className="flex items-center gap-1 border border-[#e6e4dd] rounded-lg p-0.5 bg-white">
             <button
               onClick={() => setChartType("dual")}
-              className={`px-2 py-1 text-[11px] font-semibold rounded flex items-center gap-1 transition-all ${
+              className={`px-2 py-1 text-[11px] font-semibold rounded flex items-center gap-1 transition-all cursor-pointer ${
                 chartType === "dual" ? "bg-[#0e3b3a] text-white" : "text-[#7c8783] hover:bg-[#f6f5f1]"
               }`}
               title="Dual-Metric Overlay (Revenue Bars + Net Profit Line)"
@@ -177,7 +190,7 @@ export default function RevenueChart({ transactions }) {
             </button>
             <button
               onClick={() => setChartType("bar")}
-              className={`p-1.5 rounded transition-all ${
+              className={`p-1.5 rounded transition-all cursor-pointer ${
                 chartType === "bar" ? "bg-[#0e3b3a] text-white" : "text-[#7c8783] hover:bg-[#f6f5f1]"
               }`}
               title="Bar Chart"
@@ -186,7 +199,7 @@ export default function RevenueChart({ transactions }) {
             </button>
             <button
               onClick={() => setChartType("line")}
-              className={`p-1.5 rounded transition-all ${
+              className={`p-1.5 rounded transition-all cursor-pointer ${
                 chartType === "line" ? "bg-[#0e3b3a] text-white" : "text-[#7c8783] hover:bg-[#f6f5f1]"
               }`}
               title="Line Chart"
@@ -195,7 +208,7 @@ export default function RevenueChart({ transactions }) {
             </button>
             <button
               onClick={() => setChartType("area")}
-              className={`p-1.5 rounded transition-all ${
+              className={`p-1.5 rounded transition-all cursor-pointer ${
                 chartType === "area" ? "bg-[#0e3b3a] text-white" : "text-[#7c8783] hover:bg-[#f6f5f1]"
               }`}
               title="Area Chart"
@@ -212,16 +225,16 @@ export default function RevenueChart({ transactions }) {
           Tidak ada data transaksi untuk filter yang dipilih.
         </div>
       ) : (
-        <div className="relative h-52 pt-3 pb-2">
+        <div className="relative h-64 pt-4 pb-2">
           {/* Legend */}
-          <div className="flex items-center justify-end gap-4 text-[11px] text-[#7c8783] mb-2 px-1">
+          <div className="flex items-center justify-end gap-4 text-[11px] text-[#7c8783] mb-3 px-1">
             <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-sm bg-teal-600 inline-block" />
+              <span className="w-3 h-3 rounded-sm bg-teal-500 inline-block" />
               <span>Revenue (Omzet)</span>
             </div>
             {(chartType === "dual" || chartType === "line") && (
               <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
+                <span className="w-2.5 h-2.5 rounded-full bg-[#047857] inline-block" />
                 <span>Net Income (Profit Bersih)</span>
               </div>
             )}
@@ -229,10 +242,10 @@ export default function RevenueChart({ transactions }) {
 
           {/* DUAL METRIC OVERLAY CHART */}
           {chartType === "dual" && (
-            <div className="relative h-40">
+            <div className="relative h-48">
               {/* Bars for Revenue */}
-              <div className="flex items-end gap-2 h-full px-2">
-                {aggregatedData.map((d, i) => {
+              <div className="flex items-end gap-2 h-full px-4">
+                {aggregatedData.map((d) => {
                   const heightPct = Math.max(8, Math.round((d.revenue / maxRev) * 100));
                   return (
                     <div
@@ -241,59 +254,74 @@ export default function RevenueChart({ transactions }) {
                       className="flex-1 flex flex-col items-center gap-1 group cursor-pointer h-full justify-end"
                       title={`Klik untuk detail ${d.label} — Omzet: ${rupiah(d.revenue)}`}
                     >
-                      <span className="text-[9.5px] font-semibold text-[#0e3b3a] truncate max-w-full group-hover:scale-105 transition-transform" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                      <span
+                        className="text-[10px] font-semibold text-[#0e3b3a] truncate max-w-full group-hover:scale-105 transition-transform"
+                        style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+                      >
                         {rupiahCompact(d.revenue)}
                       </span>
                       <div
-                        className="w-full rounded-t-md bg-teal-500/80 group-hover:bg-teal-600 transition-all shadow-sm"
+                        className="w-full rounded-t-md bg-teal-400/80 group-hover:bg-teal-500 transition-all shadow-xs"
                         style={{ height: `${heightPct}%` }}
                       />
-                      <div className="text-[10px] text-[#7c8783] font-medium truncate">{d.label}</div>
+                      <div className="text-[10.5px] text-[#7c8783] font-medium truncate">{d.label}</div>
                     </div>
                   );
                 })}
               </div>
 
-              {/* Net Income Line Overlay */}
-              <div className="absolute inset-0 pointer-events-none px-2">
+              {/* Net Income SVG Line Layer */}
+              <div className="absolute inset-0 pointer-events-none px-4">
                 <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="none">
                   {(() => {
                     const points = aggregatedData.map((d, i) => ({
-                      x: aggregatedData.length === 1 ? 50 : (i / (aggregatedData.length - 1)) * 92 + 4,
-                      y: 85 - (d.netIncome / maxNet) * 65,
+                      x: aggregatedData.length === 1 ? 50 : (i / (aggregatedData.length - 1)) * 90 + 5,
+                      y: 78 - ((d.netIncome - minNet) / netRange) * 55,
                       val: d.netIncome,
                     }));
                     const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
                     return (
                       <>
-                        <path d={pathD} fill="none" stroke="#10b981" strokeWidth="2.5" strokeDasharray="none" />
+                        <path d={pathD} fill="none" stroke="#047857" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                         {points.map((p, i) => (
-                          <g key={i}>
-                            <circle cx={p.x} cy={p.y} r="2.8" fill="#047857" stroke="#ffffff" strokeWidth="1" />
-                            <text
-                              x={p.x}
-                              y={p.y - 3.5}
-                              textAnchor="middle"
-                              fontSize="3"
-                              fontWeight="bold"
-                              fill="#047857"
-                              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-                            >
-                              {rupiahCompact(p.val)}
-                            </text>
-                          </g>
+                          <circle key={i} cx={p.x} cy={p.y} r="2.8" fill="#047857" stroke="#ffffff" strokeWidth="1.5" />
                         ))}
                       </>
                     );
                   })()}
                 </svg>
+
+                {/* Clean HTML Text Overlay for Net Income Labels */}
+                {aggregatedData.map((d, i) => {
+                  const xPct = aggregatedData.length === 1 ? 50 : (i / (aggregatedData.length - 1)) * 90 + 5;
+                  const yPct = 78 - ((d.netIncome - minNet) / netRange) * 55;
+                  const isNegative = d.netIncome < 0;
+
+                  return (
+                    <div
+                      key={d.id}
+                      className="absolute -translate-x-1/2 pointer-events-auto cursor-pointer flex flex-col items-center"
+                      style={{ left: `${xPct}%`, top: `${yPct}%` }}
+                      onClick={() => setInspectorData(d)}
+                      title={`Net Profit: ${rupiah(d.netIncome)}`}
+                    >
+                      <span
+                        className={`text-[9px] font-semibold px-1.5 py-0.5 rounded shadow-xs whitespace-nowrap -translate-y-full -mt-1 font-mono transition-transform hover:scale-105 ${
+                          isNegative ? "bg-red-700 text-white" : "bg-[#047857] text-white"
+                        }`}
+                      >
+                        {rupiahCompact(d.netIncome)}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
 
           {/* STANDARD BAR CHART */}
           {chartType === "bar" && (
-            <div className="flex items-end gap-2 h-40 px-2">
+            <div className="flex items-end gap-2 h-48 px-4">
               {aggregatedData.map((d) => {
                 const heightPct = Math.max(8, Math.round((d.revenue / maxRev) * 100));
                 return (
@@ -303,14 +331,14 @@ export default function RevenueChart({ transactions }) {
                     className="flex-1 flex flex-col items-center gap-1 group cursor-pointer h-full justify-end"
                     title={`Klik untuk detail ${d.label} — Omzet: ${rupiah(d.revenue)}`}
                   >
-                    <span className="text-[9.5px] font-semibold text-[#0e3b3a] truncate max-w-full" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                    <span className="text-[10px] font-semibold text-[#0e3b3a] truncate max-w-full" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
                       {rupiahCompact(d.revenue)}
                     </span>
                     <div
-                      className="w-full rounded-t-md bg-teal-600 group-hover:bg-teal-700 transition-all shadow-sm"
+                      className="w-full rounded-t-md bg-teal-600 group-hover:bg-teal-700 transition-all shadow-xs"
                       style={{ height: `${heightPct}%` }}
                     />
-                    <div className="text-[10px] text-[#7c8783] font-medium truncate">{d.label}</div>
+                    <div className="text-[10.5px] text-[#7c8783] font-medium truncate">{d.label}</div>
                   </div>
                 );
               })}
@@ -319,42 +347,48 @@ export default function RevenueChart({ transactions }) {
 
           {/* LINE CHART */}
           {chartType === "line" && (
-            <div className="relative h-40 pt-2">
-              <svg viewBox="0 0 100 100" className="w-full h-32" preserveAspectRatio="none">
+            <div className="relative h-48 pt-2 px-4">
+              <svg viewBox="0 0 100 100" className="w-full h-36" preserveAspectRatio="none">
                 {(() => {
                   const points = aggregatedData.map((d, i) => ({
-                    x: aggregatedData.length === 1 ? 50 : (i / (aggregatedData.length - 1)) * 92 + 4,
-                    y: 85 - (d.revenue / maxRev) * 65,
+                    x: aggregatedData.length === 1 ? 50 : (i / (aggregatedData.length - 1)) * 90 + 5,
+                    y: 80 - (d.revenue / maxRev) * 60,
                     val: d.revenue,
                     d,
                   }));
                   const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
                   return (
                     <>
-                      <path d={pathD} fill="none" stroke="#0d9488" strokeWidth="2.5" />
+                      <path d={pathD} fill="none" stroke="#0d9488" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                       {points.map((p, i) => (
-                        <g key={i} onClick={() => setInspectorData(p.d)} className="cursor-pointer">
-                          <circle cx={p.x} cy={p.y} r="3" fill="#0e3b3a" stroke="#ffffff" strokeWidth="1" />
-                          <text
-                            x={p.x}
-                            y={p.y - 4}
-                            textAnchor="middle"
-                            fontSize="3.2"
-                            fontWeight="bold"
-                            fill="#0e3b3a"
-                            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-                          >
-                            {rupiahCompact(p.val)}
-                          </text>
-                        </g>
+                        <circle key={i} cx={p.x} cy={p.y} r="3" fill="#0e3b3a" stroke="#ffffff" strokeWidth="1.5" />
                       ))}
                     </>
                   );
                 })()}
               </svg>
-              <div className="flex justify-between px-2 mt-1">
+
+              {/* Clean HTML Text Overlay for Line Points */}
+              {aggregatedData.map((d, i) => {
+                const xPct = aggregatedData.length === 1 ? 50 : (i / (aggregatedData.length - 1)) * 90 + 5;
+                const yPct = 80 - (d.revenue / maxRev) * 60;
+                return (
+                  <div
+                    key={d.id}
+                    className="absolute -translate-x-1/2 pointer-events-auto cursor-pointer flex flex-col items-center"
+                    style={{ left: `${xPct}%`, top: `${yPct}%` }}
+                    onClick={() => setInspectorData(d)}
+                  >
+                    <span className="text-[9.5px] font-semibold text-[#0e3b3a] bg-white border border-[#e6e4dd] px-1.5 py-0.5 rounded shadow-xs whitespace-nowrap -translate-y-full -mt-1 font-mono">
+                      {rupiahCompact(d.revenue)}
+                    </span>
+                  </div>
+                );
+              })}
+
+              <div className="flex justify-between px-2 mt-2">
                 {aggregatedData.map(d => (
-                  <div key={d.id} className="text-[10px] text-[#7c8783] flex-1 text-center font-medium truncate">
+                  <div key={d.id} className="text-[10.5px] text-[#7c8783] flex-1 text-center font-medium truncate">
                     {d.label}
                   </div>
                 ))}
@@ -364,12 +398,12 @@ export default function RevenueChart({ transactions }) {
 
           {/* AREA CHART */}
           {chartType === "area" && (
-            <div className="relative h-40 pt-2">
-              <svg viewBox="0 0 100 100" className="w-full h-32" preserveAspectRatio="none">
+            <div className="relative h-48 pt-2 px-4">
+              <svg viewBox="0 0 100 100" className="w-full h-36" preserveAspectRatio="none">
                 {(() => {
                   const points = aggregatedData.map((d, i) => ({
-                    x: aggregatedData.length === 1 ? 50 : (i / (aggregatedData.length - 1)) * 92 + 4,
-                    y: 85 - (d.revenue / maxRev) * 65,
+                    x: aggregatedData.length === 1 ? 50 : (i / (aggregatedData.length - 1)) * 90 + 5,
+                    y: 80 - (d.revenue / maxRev) * 60,
                     val: d.revenue,
                     d,
                   }));
@@ -378,30 +412,36 @@ export default function RevenueChart({ transactions }) {
                   return (
                     <>
                       <path d={pathArea} fill="#0d9488" opacity="0.2" />
-                      <path d={pathLine} fill="none" stroke="#0d9488" strokeWidth="2.5" />
+                      <path d={pathLine} fill="none" stroke="#0d9488" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                       {points.map((p, i) => (
-                        <g key={i} onClick={() => setInspectorData(p.d)} className="cursor-pointer">
-                          <circle cx={p.x} cy={p.y} r="3" fill="#0e3b3a" stroke="#ffffff" strokeWidth="1" />
-                          <text
-                            x={p.x}
-                            y={p.y - 4}
-                            textAnchor="middle"
-                            fontSize="3.2"
-                            fontWeight="bold"
-                            fill="#0e3b3a"
-                            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-                          >
-                            {rupiahCompact(p.val)}
-                          </text>
-                        </g>
+                        <circle key={i} cx={p.x} cy={p.y} r="3" fill="#0e3b3a" stroke="#ffffff" strokeWidth="1.5" />
                       ))}
                     </>
                   );
                 })()}
               </svg>
-              <div className="flex justify-between px-2 mt-1">
+
+              {/* Clean HTML Text Overlay for Area Points */}
+              {aggregatedData.map((d, i) => {
+                const xPct = aggregatedData.length === 1 ? 50 : (i / (aggregatedData.length - 1)) * 90 + 5;
+                const yPct = 80 - (d.revenue / maxRev) * 60;
+                return (
+                  <div
+                    key={d.id}
+                    className="absolute -translate-x-1/2 pointer-events-auto cursor-pointer flex flex-col items-center"
+                    style={{ left: `${xPct}%`, top: `${yPct}%` }}
+                    onClick={() => setInspectorData(d)}
+                  >
+                    <span className="text-[9.5px] font-semibold text-[#0e3b3a] bg-white border border-[#e6e4dd] px-1.5 py-0.5 rounded shadow-xs whitespace-nowrap -translate-y-full -mt-1 font-mono">
+                      {rupiahCompact(d.revenue)}
+                    </span>
+                  </div>
+                );
+              })}
+
+              <div className="flex justify-between px-2 mt-2">
                 {aggregatedData.map(d => (
-                  <div key={d.id} className="text-[10px] text-[#7c8783] flex-1 text-center font-medium truncate">
+                  <div key={d.id} className="text-[10.5px] text-[#7c8783] flex-1 text-center font-medium truncate">
                     {d.label}
                   </div>
                 ))}
@@ -424,12 +464,12 @@ export default function RevenueChart({ transactions }) {
                   </span>
                 </h4>
                 <div className="text-[11.5px] text-[#7c8783] mt-0.5">
-                  Total Omzet: <strong className="text-[#0e3b3a]">{rupiah(inspectorData.revenue)}</strong> • Profit Bersih: <strong className="text-emerald-700">{rupiah(inspectorData.netIncome)}</strong>
+                  Total Omzet: <strong className="text-[#0e3b3a]">{rupiah(inspectorData.revenue)}</strong> • Profit Bersih: <strong className={inspectorData.netIncome < 0 ? "text-red-700" : "text-emerald-700"}>{rupiah(inspectorData.netIncome)}</strong>
                 </div>
               </div>
               <button
                 onClick={() => setInspectorData(null)}
-                className="w-8 h-8 rounded-lg border border-[#e6e4dd] grid place-items-center hover:bg-[#f6f5f1] transition-colors"
+                className="w-8 h-8 rounded-lg border border-[#e6e4dd] grid place-items-center hover:bg-[#f6f5f1] transition-colors cursor-pointer"
                 aria-label="Close"
               >
                 <X size={16} />
@@ -451,8 +491,8 @@ export default function RevenueChart({ transactions }) {
                     <div className="font-semibold text-[#0e3b3a]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
                       {rupiah(item.sellingPrice)}
                     </div>
-                    <div className="text-[10.5px] font-medium text-emerald-600 mt-0.5">
-                      + Net Profit: {rupiah(item.netIncome)}
+                    <div className={`text-[10.5px] font-medium mt-0.5 ${item.netIncome < 0 ? "text-red-600" : "text-emerald-600"}`}>
+                      {item.netIncome < 0 ? "Loss: " : "+ Net Profit: "}{rupiah(item.netIncome)}
                     </div>
                   </div>
                 </div>
@@ -462,7 +502,7 @@ export default function RevenueChart({ transactions }) {
             <div className="mt-4 pt-3 border-t border-[#e6e4dd] flex justify-end">
               <button
                 onClick={() => setInspectorData(null)}
-                className="px-4 py-1.5 text-[12px] font-medium bg-[#0e3b3a] text-white rounded-lg hover:bg-[#143a38]"
+                className="px-4 py-1.5 text-[12px] font-medium bg-[#0e3b3a] text-white rounded-lg hover:bg-[#143a38] cursor-pointer"
               >
                 Tutup Inspector
               </button>
