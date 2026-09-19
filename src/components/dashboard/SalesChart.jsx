@@ -55,6 +55,9 @@ export default function SalesChart({ transactions }) {
     );
   }
 
+  // Integer Y-axis grid ticks (e.g. 0, 1, 2, 3...)
+  const yTicks = Array.from({ length: maxTotal + 1 }, (_, i) => i);
+
   return (
     <div className="bg-white border border-[#e6e4dd] rounded-xl p-5 select-none">
       {/* Header */}
@@ -87,60 +90,68 @@ export default function SalesChart({ transactions }) {
         </div>
       </div>
 
-      {/* Chart Canvas */}
-      <div className="relative">
-        {/* Y Axis Grid lines */}
-        <div className="relative h-44 pt-6 pb-6">
-          <div className="absolute inset-x-0 top-6 bottom-6 flex flex-col justify-between pointer-events-none">
-            <div className="border-t border-[#edece7] w-full" />
-            <div className="border-t border-dashed border-[#edece7] w-full" />
-            <div className="border-t border-[#edece7] w-full" />
-          </div>
-
-          {/* Columns Container */}
-          <div className="flex items-end gap-2 h-full px-2 relative z-10">
-            {buckets.map((b) => {
-              const heightPct = Math.max(12, Math.round((b.total / maxTotal) * 100));
-              const brandEntries = stacked ? Object.entries(b.byBrand) : [["total", b.total]];
-
-              return (
-                <div
-                  key={b.date}
-                  className="flex-1 flex flex-col items-center justify-end h-full group cursor-pointer relative"
-                >
-                  {/* Total Count Label ABOVE Bar */}
-                  <span
-                    className="text-[11px] font-bold text-[#0e3b3a] mb-1 group-hover:scale-110 transition-transform"
-                    style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-                  >
-                    {b.total}
+      {/* Main Chart Section */}
+      <div className="relative overflow-x-auto pb-2">
+        <div className="min-w-[600px]">
+          {/* Y Axis Grid & Bars Container */}
+          <div className="relative h-48 pt-6 pb-6">
+            {/* Horizontal Grid lines for integer units */}
+            <div className="absolute inset-x-0 top-6 bottom-6 flex flex-col-reverse justify-between pointer-events-none">
+              {yTicks.map((tick) => (
+                <div key={tick} className="flex items-center w-full">
+                  <span className="text-[10px] text-[#7c8783] w-5 text-right pr-1.5 font-mono select-none">
+                    {tick}
                   </span>
-
-                  {/* Stacked Bar Column */}
-                  <div
-                    className="w-full rounded-t overflow-hidden border border-[#e6e4dd] flex flex-col-reverse transition-all shadow-xs group-hover:shadow-md"
-                    style={{ height: `${heightPct}%` }}
-                  >
-                    {brandEntries.map(([key, cnt]) => {
-                      const hPct = (cnt / b.total) * 100;
-                      const color = stacked ? (BRAND_COLORS[key] || "#6b7280") : "#0e3b3a";
-                      return (
-                        <div
-                          key={key}
-                          style={{ height: `${hPct}%`, background: color }}
-                          title={`${key.toUpperCase()}: ${cnt} unit sold on ${b.date}`}
-                        />
-                      );
-                    })}
-                  </div>
-
-                  {/* Date Label BELOW Bar */}
-                  <div className="text-[10.5px] font-medium text-[#7c8783] mt-2 truncate w-full text-center">
-                    {fmtShortDate(b.date)}
-                  </div>
+                  <div className={`flex-1 ${tick === 0 ? "border-t border-[#cbd5e1]" : "border-t border-dashed border-[#e6e4dd]"}`} />
                 </div>
-              );
-            })}
+              ))}
+            </div>
+
+            {/* Bars with Uniform Width & Spacing */}
+            <div className="flex items-end justify-around gap-3 h-full pl-7 pr-2 relative z-10">
+              {buckets.map((b) => {
+                // Exact height percentage proportional to maxTotal
+                const heightPct = Math.round((b.total / maxTotal) * 100);
+                const brandEntries = stacked ? Object.entries(b.byBrand) : [["total", b.total]];
+
+                return (
+                  <div
+                    key={b.date}
+                    className="flex flex-col items-center justify-end h-full group cursor-pointer relative w-11 shrink-0"
+                  >
+                    {/* Total Count Label ABOVE Bar */}
+                    <span
+                      className="text-[11px] font-bold text-[#0e3b3a] mb-1 group-hover:scale-110 transition-transform font-mono"
+                    >
+                      {b.total}
+                    </span>
+
+                    {/* Uniform Bar Column (Fixed Width: w-11) */}
+                    <div
+                      className="w-11 rounded-t overflow-hidden border border-[#e6e4dd] flex flex-col-reverse transition-all shadow-xs group-hover:shadow-md"
+                      style={{ height: `${heightPct}%` }}
+                    >
+                      {brandEntries.map(([key, cnt]) => {
+                        const hPct = (cnt / b.total) * 100;
+                        const color = stacked ? (BRAND_COLORS[key] || "#6b7280") : "#0e3b3a";
+                        return (
+                          <div
+                            key={key}
+                            style={{ height: `${hPct}%`, background: color }}
+                            title={`${key.toUpperCase()}: ${cnt} unit sold on ${b.date}`}
+                          />
+                        );
+                      })}
+                    </div>
+
+                    {/* Date Label BELOW Bar */}
+                    <div className="text-[10.5px] font-medium text-[#7c8783] mt-2 truncate w-full text-center">
+                      {fmtShortDate(b.date)}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
