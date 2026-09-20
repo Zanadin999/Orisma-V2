@@ -4,10 +4,10 @@ import { useCategoriesContext } from "../../context/CategoriesContext";
 import { Layers } from "lucide-react";
 
 const BRAND_COLORS = {
-  honda: "#ef4444",
-  yamaha: "#3b82f6",
-  suzuki: "#f59e0b",
-  kawasaki: "#10b981",
+  honda: "#0e3b3a",
+  yamaha: "#0d9488",
+  suzuki: "#10b981",
+  kawasaki: "#f59e0b",
   vespa: "#ec4899",
   lainnya: "#6b7280",
 };
@@ -18,9 +18,9 @@ export default function SalesChart({ transactions }) {
   const [stacked, setStacked] = useState(true);
 
   // Group last N transactions by date, stacked by brand
-  const { buckets, maxTotal, brandKeys } = useMemo(() => {
+  const { buckets, maxTotal, niceMax, yTicks, brandKeys } = useMemo(() => {
     if (!transactions || transactions.length === 0) {
-      return { buckets: [], maxTotal: 1, brandKeys: [] };
+      return { buckets: [], maxTotal: 1, niceMax: 1, yTicks: [], brandKeys: [] };
     }
     const recent = [...transactions].sort((a, b) => (a.soldDate || "").localeCompare(b.soldDate || "")).slice(-limit);
     const map = {};
@@ -33,8 +33,21 @@ export default function SalesChart({ transactions }) {
     });
     const buckets = Object.values(map).sort((a, b) => a.date.localeCompare(b.date));
     const maxTotal = Math.max(...buckets.map(b => b.total), 1);
+
+    // Calculate nice max & evenly spaced 4-5 ticks
+    let niceMax = maxTotal;
+    let ticks = [];
+    if (maxTotal <= 4) {
+      niceMax = maxTotal;
+      ticks = Array.from({ length: maxTotal }, (_, i) => maxTotal - i);
+    } else {
+      const step = Math.ceil(maxTotal / 4);
+      niceMax = step * 4;
+      ticks = [step * 4, step * 3, step * 2, step * 1];
+    }
+
     const brandKeys = [...new Set(recent.map(t => getCategory(t.category).key))];
-    return { buckets, maxTotal, brandKeys };
+    return { buckets, maxTotal, niceMax, yTicks: ticks, brandKeys };
   }, [transactions, limit, getCategory]);
 
   if (buckets.length === 0) {
@@ -54,9 +67,6 @@ export default function SalesChart({ transactions }) {
       </div>
     );
   }
-
-  // Integer Y-axis grid ticks (e.g. 0, 1, 2, 3...)
-  const yTicks = Array.from({ length: maxTotal + 1 }, (_, i) => i);
 
   return (
     <div className="bg-white border border-[#e6e4dd] rounded-xl p-5 select-none">
@@ -92,43 +102,46 @@ export default function SalesChart({ transactions }) {
 
       {/* Main Chart Section */}
       <div className="relative overflow-x-auto pb-2">
-        <div className="min-w-[600px]">
-          {/* Y Axis Grid & Bars Container */}
-          <div className="relative h-48 pt-6 pb-6">
-            {/* Horizontal Grid lines for integer units */}
-            <div className="absolute inset-x-0 top-6 bottom-6 flex flex-col-reverse justify-between pointer-events-none">
-              {yTicks.map((tick) => (
-                <div key={tick} className="flex items-center w-full">
-                  <span className="text-[10px] text-[#7c8783] w-5 text-right pr-1.5 font-mono select-none">
-                    {tick}
-                  </span>
-                  <div className={`flex-1 ${tick === 0 ? "border-t border-[#cbd5e1]" : "border-t border-dashed border-[#e6e4dd]"}`} />
-                </div>
-              ))}
-            </div>
+        <div className="min-w-[600px] pt-4">
+          {/* Plot container with Solid L-Shaped Axis Frame */}
+          <div className="relative h-48 border-l-2 border-b-2 border-slate-700 ml-9 mr-2">
+            {/* Horizontal Dashed Grid Lines (Positioned by exact Y percentage) */}
+            {yTicks.map(t => (
+              <div
+                key={t}
+                className="absolute left-0 right-0 border-t border-dashed border-slate-200 pointer-events-none flex items-center"
+                style={{ bottom: `${(t / niceMax) * 100}%` }}
+              >
+                <span className="absolute -left-8 text-[10px] font-bold text-slate-600 font-mono w-6 text-right -translate-y-1/2 select-none">
+                  {t}
+                </span>
+              </div>
+            ))}
 
-            {/* Bars with Uniform Width & Spacing */}
-            <div className="flex items-end justify-around gap-3 h-full pl-7 pr-2 relative z-10">
-              {buckets.map((b) => {
-                // Exact height percentage proportional to maxTotal
-                const heightPct = Math.round((b.total / maxTotal) * 100);
+            {/* Zero Baseline Tick Label */}
+            <span className="absolute -left-8 -bottom-2 text-[10px] font-bold text-slate-700 font-mono w-6 text-right pointer-events-none select-none">
+              0
+            </span>
+
+            {/* Bars Container (Sharp Flat Blocks inside L-Frame) */}
+            <div className="relative z-10 flex items-end justify-around gap-2 h-full px-2">
+              {buckets.map(b => {
+                const heightPct = Math.round((b.total / niceMax) * 100);
                 const brandEntries = stacked ? Object.entries(b.byBrand) : [["total", b.total]];
 
                 return (
                   <div
                     key={b.date}
-                    className="flex flex-col items-center justify-end h-full group cursor-pointer relative w-11 shrink-0"
+                    className="flex flex-col items-center justify-end h-full group cursor-pointer relative w-10 shrink-0"
                   >
-                    {/* Total Count Label ABOVE Bar */}
-                    <span
-                      className="text-[11px] font-bold text-[#0e3b3a] mb-1 group-hover:scale-110 transition-transform font-mono"
-                    >
+                    {/* Number Badge Sits Dynamically Above Top Edge of Bar */}
+                    <span className="text-[10px] font-bold text-[#0e3b3a] bg-white border border-slate-200 shadow-xs px-1.5 py-0.5 mb-1 font-mono group-hover:bg-[#0e3b3a] group-hover:text-white transition-all whitespace-nowrap">
                       {b.total}
                     </span>
 
-                    {/* Uniform Bar Column (Fixed Width: w-11) */}
+                    {/* Uniform Sharp Flat Block Bar (rounded-none) */}
                     <div
-                      className="w-11 rounded-t overflow-hidden border border-[#e6e4dd] flex flex-col-reverse transition-all shadow-xs group-hover:shadow-md"
+                      className="w-10 rounded-none overflow-hidden flex flex-col-reverse shadow-xs group-hover:shadow-md transition-all"
                       style={{ height: `${heightPct}%` }}
                     >
                       {brandEntries.map(([key, cnt]) => {
@@ -143,15 +156,19 @@ export default function SalesChart({ transactions }) {
                         );
                       })}
                     </div>
-
-                    {/* Date Label BELOW Bar */}
-                    <div className="text-[10.5px] font-medium text-[#7c8783] mt-2 truncate w-full text-center">
-                      {fmtShortDate(b.date)}
-                    </div>
                   </div>
                 );
               })}
             </div>
+          </div>
+
+          {/* Date Labels below X-Axis Baseline */}
+          <div className="flex justify-around ml-9 mr-2 mt-2 text-[10.5px] font-medium text-[#7c8783]">
+            {buckets.map(b => (
+              <div key={b.date} className="w-10 text-center truncate">
+                {fmtShortDate(b.date)}
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -161,7 +178,7 @@ export default function SalesChart({ transactions }) {
         <div className="flex flex-wrap gap-4 mt-3 pt-3 border-t border-[#e6e4dd]">
           {brandKeys.map(k => (
             <div key={k} className="flex items-center gap-1.5 text-[11px]">
-              <span className="w-2.5 h-2.5 rounded-xs" style={{ background: BRAND_COLORS[k] || "#6b7280" }} />
+              <span className="w-2.5 h-2.5 rounded-none" style={{ background: BRAND_COLORS[k] || "#6b7280" }} />
               <span className="font-medium capitalize text-[#16211f]">{k}</span>
             </div>
           ))}
